@@ -30,3 +30,10 @@ coverage/
 # ESLint cache
 .eslintcache
 
+# Coverage
+coverage/
+coverage/**
+
+# Environment variables
+.env
+
