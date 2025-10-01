@@ -2,10 +2,26 @@ import {
     brainTreePaymentController,
     braintreeTokenController,
 } from './productController';
-import { getGateway } from './productController';
+import braintree from 'braintree';
+import { gateway } from './productController';
 import orderModel from '../models/orderModel';
 
 jest.mock('../models/orderModel'); // mock the DB model
+
+jest.mock('braintree', () => {
+    const mockGateway = {
+        clientToken: {
+            generate: jest.fn(),
+        },
+        transaction: {
+            sale: jest.fn(),
+        },
+    };
+    return {
+        BraintreeGateway: jest.fn(() => mockGateway),
+        Environment: { Sandbox: 'Sandbox' },
+    };
+});
 
 describe('braintreeTokenController', () => {
     const req = {};
@@ -17,15 +33,18 @@ describe('braintreeTokenController', () => {
             json: jest.fn(),
         };
     });
+    afterEach(() => {   
+        gateway.clientToken.generate = jest.fn()
+    })
 
     it('should send the token when successful', async () => {
-        getGateway().clientToken.generate = jest.fn((data, callback) => {
+        gateway.clientToken.generate = jest.fn((data, callback) => {
             callback(null, { success: true });
         });
 
         await braintreeTokenController(req, res);
 
-        expect(getGateway().clientToken.generate).toHaveBeenCalledWith(
+        expect(gateway.clientToken.generate).toHaveBeenCalledWith(
             expect.objectContaining({}),
             expect.any(Function)
         );
@@ -38,13 +57,13 @@ describe('braintreeTokenController', () => {
     it('should return 500 when there is error generating token', async () => {
         const error = 'error message';
 
-        getGateway().clientToken.generate = jest.fn((err, callback) => {
+        gateway.clientToken.generate = jest.fn((err, callback) => {
             callback(error, { success: false });
         });
 
         await braintreeTokenController(req, res);
 
-        expect(getGateway().clientToken.generate).toHaveBeenCalled();
+        expect(gateway.clientToken.generate).toHaveBeenCalled();
 
         expect(res.status).toHaveBeenCalledWith(500);
         expect(res.json).toHaveBeenCalledWith(
@@ -55,7 +74,7 @@ describe('braintreeTokenController', () => {
     it('should return 500 when error is thrown', async () => {
         const error = new Error('Unexpected error');
 
-        getGateway().clientToken.generate = jest.fn(() => {
+        gateway.clientToken.generate = jest.fn(() => {
             throw error;
         });
 
@@ -88,12 +107,16 @@ describe('brainTreePaymentController', () => {
         };
     });
 
+    afterEach(() => {   
+        gateway.transaction.sale = jest.fn()
+    })
+
     it('should return ok=true when transaction is successful', async () => {
         const result = {
             success: true,
         };
 
-        getGateway().transaction.sale = jest.fn((data, callback) => {
+        gateway.transaction.sale = jest.fn((data, callback) => {
             callback(null, result);
         });
 
@@ -103,7 +126,7 @@ describe('brainTreePaymentController', () => {
 
         await brainTreePaymentController(req, res);
 
-        expect(getGateway().transaction.sale).toHaveBeenCalledWith(
+        expect(gateway.transaction.sale).toHaveBeenCalledWith(
             expect.objectContaining({
                 amount: '30.00',
                 paymentMethodNonce: req.body.nonce,
@@ -127,7 +150,7 @@ describe('brainTreePaymentController', () => {
     });
 
     it('should return 500 if transaction fails', async () => {
-        getGateway().transaction.sale = jest.fn((data, callback) => {
+        gateway.transaction.sale = jest.fn((data, callback) => {
             callback(null, { success: false, message: 'Payment failed' });
         });
 
@@ -152,7 +175,7 @@ describe('brainTreePaymentController', () => {
 
     it('should return 500 if dbError is thrown when saving order', async () => {
         const dbError = new Error('Database save failed');
-        getGateway().transaction.sale = jest.fn((data, callback) => {
+        gateway.transaction.sale = jest.fn((data, callback) => {
             callback(null, { success: true });
         });
 
