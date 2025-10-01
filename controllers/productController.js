@@ -9,13 +9,21 @@ import dotenv from "dotenv";
 
 dotenv.config();
 
+let gateway;
+
 //payment gateway
-export var gateway = new braintree.BraintreeGateway({
-  environment: braintree.Environment.Sandbox,
-  merchantId: process.env.BRAINTREE_MERCHANT_ID,
-  publicKey: process.env.BRAINTREE_PUBLIC_KEY,
-  privateKey: process.env.BRAINTREE_PRIVATE_KEY,
-});
+export function getGateway() {
+    // singleton pattern to ensure that env variables are read at runtime, not at module load time
+    if (!gateway) {
+        gateway = new braintree.BraintreeGateway({
+            environment: braintree.Environment.Sandbox,
+            merchantId: process.env.BRAINTREE_MERCHANT_ID,
+            publicKey: process.env.BRAINTREE_PUBLIC_KEY,
+            privateKey: process.env.BRAINTREE_PRIVATE_KEY,
+        });
+    }
+    return gateway;
+}
 
 export const createProductController = async (req, res) => {
   try {
@@ -330,7 +338,7 @@ export const productCategoryController = async (req, res) => {
 //token
 export const braintreeTokenController = async (req, res) => {
   try {
-    gateway.clientToken.generate({}, function (err, response) {
+    getGateway().clientToken.generate({}, function (err, response) {
       if (err) {
         res.status(500).json({ ok: false, error: err });
       } else {
@@ -356,7 +364,7 @@ export const brainTreePaymentController = async (req, res) => {
       total += i.price;
     });
 
-    gateway.transaction.sale(
+    getGateway().transaction.sale(
       {
         amount: total.toFixed(2), // Braintree expects string with 2 decimals
         paymentMethodNonce: nonce,
