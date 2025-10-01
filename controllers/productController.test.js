@@ -2,7 +2,7 @@ import {
     brainTreePaymentController,
     braintreeTokenController,
 } from './productController';
-import { gateway } from './productController';
+import { getGateway } from './productController';
 import orderModel from '../models/orderModel';
 
 jest.mock('../models/orderModel'); // mock the DB model
@@ -19,13 +19,13 @@ describe('braintreeTokenController', () => {
     });
 
     it('should send the token when successful', async () => {
-        gateway.clientToken.generate = jest.fn((data, callback) => {
+        getGateway().clientToken.generate = jest.fn((data, callback) => {
             callback(null, { success: true });
         });
 
         await braintreeTokenController(req, res);
 
-        expect(gateway.clientToken.generate).toHaveBeenCalledWith(
+        expect(getGateway().clientToken.generate).toHaveBeenCalledWith(
             expect.objectContaining({}),
             expect.any(Function)
         );
@@ -38,13 +38,13 @@ describe('braintreeTokenController', () => {
     it('should return 500 when there is error generating token', async () => {
         const error = 'error message';
 
-        gateway.clientToken.generate = jest.fn((err, callback) => {
+        getGateway().clientToken.generate = jest.fn((err, callback) => {
             callback(error, { success: false });
         });
 
         await braintreeTokenController(req, res);
 
-        expect(gateway.clientToken.generate).toHaveBeenCalled();
+        expect(getGateway().clientToken.generate).toHaveBeenCalled();
 
         expect(res.status).toHaveBeenCalledWith(500);
         expect(res.json).toHaveBeenCalledWith(
@@ -55,7 +55,7 @@ describe('braintreeTokenController', () => {
     it('should return 500 when error is thrown', async () => {
         const error = new Error('Unexpected error');
 
-        gateway.clientToken.generate = jest.fn(() => {
+        getGateway().clientToken.generate = jest.fn(() => {
             throw error;
         });
 
@@ -93,7 +93,7 @@ describe('brainTreePaymentController', () => {
             success: true,
         };
 
-        gateway.transaction.sale = jest.fn((data, callback) => {
+        getGateway().transaction.sale = jest.fn((data, callback) => {
             callback(null, result);
         });
 
@@ -103,7 +103,7 @@ describe('brainTreePaymentController', () => {
 
         await brainTreePaymentController(req, res);
 
-        expect(gateway.transaction.sale).toHaveBeenCalledWith(
+        expect(getGateway().transaction.sale).toHaveBeenCalledWith(
             expect.objectContaining({
                 amount: '30.00',
                 paymentMethodNonce: req.body.nonce,
@@ -127,7 +127,7 @@ describe('brainTreePaymentController', () => {
     });
 
     it('should return 500 if transaction fails', async () => {
-        gateway.transaction.sale = jest.fn((data, callback) => {
+        getGateway().transaction.sale = jest.fn((data, callback) => {
             callback(null, { success: false, message: 'Payment failed' });
         });
 
@@ -152,7 +152,7 @@ describe('brainTreePaymentController', () => {
 
     it('should return 500 if dbError is thrown when saving order', async () => {
         const dbError = new Error('Database save failed');
-        gateway.transaction.sale = jest.fn((data, callback) => {
+        getGateway().transaction.sale = jest.fn((data, callback) => {
             callback(null, { success: true });
         });
 
