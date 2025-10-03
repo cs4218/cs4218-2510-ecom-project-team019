@@ -166,6 +166,43 @@ describe("authController", () => {
 
       consoleLogSpy.mockRestore();
     });
+
+    it("should handle errors during password hashing", async () => {
+      req.body = validUserData;
+      const mockError = new Error("Hashing error");
+      const consoleLogSpy = jest.spyOn(console, "log").mockImplementation();
+
+      userModel.findOne.mockResolvedValue(null);
+      hashPassword.mockRejectedValue(mockError);
+
+      await registerController(req, res);
+
+      expect(consoleLogSpy).toHaveBeenCalledWith(mockError);
+      expect(res.status).toHaveBeenCalledWith(500);
+
+      consoleLogSpy.mockRestore();
+    });
+
+    it("should handle errors during user save", async () => {
+      req.body = validUserData;
+      const hashedPassword = "$2b$10$hashedPassword";
+      const mockError = new Error("Save error");
+      const consoleLogSpy = jest.spyOn(console, "log").mockImplementation();
+
+      const saveMock = jest.fn().mockRejectedValue(mockError);
+      const mockUserInstance = { save: saveMock };
+
+      userModel.findOne.mockResolvedValue(null);
+      hashPassword.mockResolvedValue(hashedPassword);
+      userModel.mockImplementation(() => mockUserInstance);
+
+      await registerController(req, res);
+
+      expect(consoleLogSpy).toHaveBeenCalledWith(mockError);
+      expect(res.status).toHaveBeenCalledWith(500);
+
+      consoleLogSpy.mockRestore();
+    });
   });
 
   describe("loginController", () => {
@@ -317,6 +354,51 @@ describe("authController", () => {
 
       consoleLogSpy.mockRestore();
     });
+
+    it("should handle errors during password comparison", async () => {
+      req.body = loginData;
+      const mockError = new Error("Compare error");
+      const consoleLogSpy = jest.spyOn(console, "log").mockImplementation();
+
+      userModel.findOne.mockResolvedValue(mockUser);
+      comparePassword.mockRejectedValue(mockError);
+
+      await loginController(req, res);
+
+      expect(consoleLogSpy).toHaveBeenCalledWith(mockError);
+      expect(res.status).toHaveBeenCalledWith(500);
+      expect(res.send).toHaveBeenCalledWith({
+        success: false,
+        message: "Error in login",
+        error: mockError,
+      });
+
+      consoleLogSpy.mockRestore();
+    });
+
+    it("should handle errors during JWT token generation", async () => {
+      req.body = loginData;
+      const mockError = new Error("JWT error");
+      const consoleLogSpy = jest.spyOn(console, "log").mockImplementation();
+
+      userModel.findOne.mockResolvedValue(mockUser);
+      comparePassword.mockResolvedValue(true);
+      JWT.sign.mockImplementation(() => {
+        throw mockError;
+      });
+
+      await loginController(req, res);
+
+      expect(consoleLogSpy).toHaveBeenCalledWith(mockError);
+      expect(res.status).toHaveBeenCalledWith(500);
+      expect(res.send).toHaveBeenCalledWith({
+        success: false,
+        message: "Error in login",
+        error: mockError,
+      });
+
+      consoleLogSpy.mockRestore();
+    });
   });
 
   describe("forgotPasswordController", () => {
@@ -431,6 +513,50 @@ describe("authController", () => {
 
       consoleLogSpy.mockRestore();
     });
+
+    it("should handle errors during password hashing in forgot password", async () => {
+      req.body = forgotPasswordData;
+      const mockError = new Error("Hashing error");
+      const consoleLogSpy = jest.spyOn(console, "log").mockImplementation();
+
+      userModel.findOne.mockResolvedValue(mockUser);
+      hashPassword.mockRejectedValue(mockError);
+
+      await forgotPasswordController(req, res);
+
+      expect(consoleLogSpy).toHaveBeenCalledWith(mockError);
+      expect(res.status).toHaveBeenCalledWith(500);
+      expect(res.send).toHaveBeenCalledWith({
+        success: false,
+        message: "Something went wrong",
+        error: mockError,
+      });
+
+      consoleLogSpy.mockRestore();
+    });
+
+    it("should handle errors during user update in forgot password", async () => {
+      req.body = forgotPasswordData;
+      const hashedPassword = "$2b$10$newHashedPassword";
+      const mockError = new Error("Update error");
+      const consoleLogSpy = jest.spyOn(console, "log").mockImplementation();
+
+      userModel.findOne.mockResolvedValue(mockUser);
+      hashPassword.mockResolvedValue(hashedPassword);
+      userModel.findByIdAndUpdate.mockRejectedValue(mockError);
+
+      await forgotPasswordController(req, res);
+
+      expect(consoleLogSpy).toHaveBeenCalledWith(mockError);
+      expect(res.status).toHaveBeenCalledWith(500);
+      expect(res.send).toHaveBeenCalledWith({
+        success: false,
+        message: "Something went wrong",
+        error: mockError,
+      });
+
+      consoleLogSpy.mockRestore();
+    });
   });
 
   describe("testController", () => {
@@ -439,20 +565,6 @@ describe("authController", () => {
 
       expect(res.send).toHaveBeenCalledWith("Protected Routes");
     });
-
-    // it("should handle errors in testController", () => {
-    //   const mockError = new Error("Test error");
-    //   const consoleLogSpy = jest.spyOn(console, "log").mockImplementation();
-
-    //   // Force an error by making res.send throw
-    //   res.send = jest.fn(() => { throw mockError });
-
-    //   testController(req, res);
-
-    //   expect(consoleLogSpy).toHaveBeenCalledWith(mockError);
-
-    //   consoleLogSpy.mockRestore();
-    // });
   });
 });
 
