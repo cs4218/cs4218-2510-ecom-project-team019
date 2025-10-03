@@ -16,7 +16,7 @@ describe("authMiddleware", () => {
     };
     res = {
       status: jest.fn().mockReturnThis(),
-      send: jest.fn().mockReturnThis(),
+      json: jest.fn().mockReturnThis(),
     };
     next = jest.fn();
   });
@@ -46,14 +46,17 @@ describe("authMiddleware", () => {
       const consoleLogSpy = jest.spyOn(console, "log").mockImplementation();
 
       req.headers.authorization = mockToken;
-      JWT.verify.mockImplementation(() => {
-        throw mockError;
-      });
+      JWT.verify.mockImplementation(() => { throw mockError });
 
       await requireSignIn(req, res, next);
 
       expect(JWT.verify).toHaveBeenCalledWith(mockToken, process.env.JWT_SECRET);
       expect(consoleLogSpy).toHaveBeenCalledWith(mockError);
+      expect(res.status).toHaveBeenCalledWith(401);
+      expect(res.json).toHaveBeenCalledWith({
+        success: false,
+        message: "Unauthorized - Invalid or expired token",
+      });
       expect(next).not.toHaveBeenCalled();
 
       consoleLogSpy.mockRestore();
@@ -65,14 +68,17 @@ describe("authMiddleware", () => {
       const consoleLogSpy = jest.spyOn(console, "log").mockImplementation();
 
       req.headers.authorization = mockToken;
-      JWT.verify.mockImplementation(() => {
-        throw mockError;
-      });
+      JWT.verify.mockImplementation(() => { throw mockError });
 
       await requireSignIn(req, res, next);
 
       expect(JWT.verify).toHaveBeenCalledWith(mockToken, process.env.JWT_SECRET);
       expect(consoleLogSpy).toHaveBeenCalledWith(mockError);
+      expect(res.status).toHaveBeenCalledWith(401);
+      expect(res.json).toHaveBeenCalledWith({
+        success: false,
+        message: "Unauthorized - Invalid or expired token",
+      });
       expect(req.user).toBeNull();
 
       consoleLogSpy.mockRestore();
@@ -82,13 +88,16 @@ describe("authMiddleware", () => {
       const mockError = new Error("jwt must be provided");
       const consoleLogSpy = jest.spyOn(console, "log").mockImplementation();
 
-      JWT.verify.mockImplementation(() => {
-        throw mockError;
-      });
+      JWT.verify.mockImplementation(() => { throw mockError });
 
       await requireSignIn(req, res, next);
 
       expect(consoleLogSpy).toHaveBeenCalledWith(mockError);
+      expect(res.status).toHaveBeenCalledWith(401);
+      expect(res.json).toHaveBeenCalledWith({
+        success: false,
+        message: "Unauthorized - Invalid or expired token",
+      });
       expect(next).not.toHaveBeenCalled();
 
       consoleLogSpy.mockRestore();
@@ -129,7 +138,7 @@ describe("authMiddleware", () => {
       expect(userModel.findById).toHaveBeenCalledWith("admin123");
       expect(next).toHaveBeenCalled();
       expect(res.status).not.toHaveBeenCalled();
-      expect(res.send).not.toHaveBeenCalled();
+      expect(res.json).not.toHaveBeenCalled();
     });
 
     it("should return 401 when user is not admin (role = 0)", async () => {
@@ -146,9 +155,9 @@ describe("authMiddleware", () => {
 
       expect(userModel.findById).toHaveBeenCalledWith("user123");
       expect(res.status).toHaveBeenCalledWith(401);
-      expect(res.send).toHaveBeenCalledWith({
+      expect(res.json).toHaveBeenCalledWith({
         success: false,
-        message: "UnAuthorized Access",
+        message: "Unauthorized access",
       });
       expect(next).not.toHaveBeenCalled();
     });
@@ -167,14 +176,14 @@ describe("authMiddleware", () => {
 
       expect(userModel.findById).toHaveBeenCalledWith("user456");
       expect(res.status).toHaveBeenCalledWith(401);
-      expect(res.send).toHaveBeenCalledWith({
+      expect(res.json).toHaveBeenCalledWith({
         success: false,
-        message: "UnAuthorized Access",
+        message: "Unauthorized access",
       });
       expect(next).not.toHaveBeenCalled();
     });
 
-    it("should handle database errors and return 401", async () => {
+    it("should handle database errors and return 500", async () => {
       const mockError = new Error("Database connection failed");
       const consoleLogSpy = jest.spyOn(console, "log").mockImplementation();
 
@@ -185,8 +194,8 @@ describe("authMiddleware", () => {
 
       expect(userModel.findById).toHaveBeenCalledWith("user123");
       expect(consoleLogSpy).toHaveBeenCalledWith(mockError);
-      expect(res.status).toHaveBeenCalledWith(401);
-      expect(res.send).toHaveBeenCalledWith({
+      expect(res.status).toHaveBeenCalledWith(500);
+      expect(res.json).toHaveBeenCalledWith({
         success: false,
         error: mockError,
         message: "Error in admin middleware",
@@ -207,8 +216,8 @@ describe("authMiddleware", () => {
 
       expect(userModel.findById).toHaveBeenCalledWith("nonexistent123");
       expect(consoleLogSpy).toHaveBeenCalledWith(mockError);
-      expect(res.status).toHaveBeenCalledWith(401);
-      expect(res.send).toHaveBeenCalledWith({
+      expect(res.status).toHaveBeenCalledWith(500);
+      expect(res.json).toHaveBeenCalledWith({
         success: false,
         error: mockError,
         message: "Error in admin middleware",
