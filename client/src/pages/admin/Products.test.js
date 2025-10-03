@@ -66,4 +66,66 @@ describe('Products component', () => {
 
         consoleSpy.mockRestore();
     });
+
+    it('renders All Products List on success', async () => {
+        axios.get.mockResolvedValueOnce({
+            data: {
+                products: [],
+            },
+        });
+
+        render(
+            <MemoryRouter>
+                <Products />
+            </MemoryRouter>
+        );
+
+        expect(await screen.findByText('All Products List')).toBeVisible();
+    });
+
+    it('displays products when fetched', async () => {
+        axios.get.mockResolvedValueOnce({
+            data: {
+                products: [
+                    {
+                        _id: '123',
+                        slug: 'test-product',
+                        name: 'Main Product',
+                        description: 'This is the main product',
+                        category: { _id: 'cat1', name: 'Cat1' },
+                    },
+                ],
+            },
+        });
+
+        render(
+            <MemoryRouter>
+                <Products />
+            </MemoryRouter>
+        );
+        await waitFor(() => {
+            expect(screen.getByText('Main Product')).toBeInTheDocument();
+
+            const link = screen.getByRole('link', { name: /Main Product/i });
+            expect(link).toBeInTheDocument();
+            expect(link).toHaveAttribute(
+                'href',
+                '/dashboard/admin/product/test-product'
+            );
+
+            const img = screen.getByRole('img', { name: /Main Product/i });
+            expect(img).toBeInTheDocument();
+            expect(img).toHaveAttribute(
+                'src',
+                '/api/v1/product/product-photo/123'
+            );
+            expect(screen.getByRole('heading', { level: 5 })).toHaveTextContent(
+                'Main Product'
+            );
+
+            expect(
+                screen.getByText(/This is the main product/i)
+            ).toBeInTheDocument();
+        });
+    });
 });

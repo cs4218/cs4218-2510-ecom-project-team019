@@ -37,11 +37,9 @@ export const createProductController = async (req, res) => {
             case !quantity:
                 return res.status(500).send({ error: 'Quantity is Required' });
             case photo && photo.size > 1000000:
-                return res
-                    .status(500)
-                    .send({
-                        error: 'photo is Required and should be less then 1mb',
-                    });
+                return res.status(500).send({
+                    error: 'photo is Required and should be less then 1mb',
+                });
         }
 
         const products = new productModel({
@@ -80,7 +78,7 @@ export const getProductController = async (req, res) => {
         res.status(200).send({
             success: true,
             counTotal: products.length,
-            message: 'ALlProducts ',
+            message: 'All Products',
             products,
         });
     } catch (error) {
@@ -173,11 +171,9 @@ export const updateProductController = async (req, res) => {
             case !quantity:
                 return res.status(500).send({ error: 'Quantity is Required' });
             case photo && photo.size > 1000000:
-                return res
-                    .status(500)
-                    .send({
-                        error: 'photo is Required and should be less then 1mb',
-                    });
+                return res.status(500).send({
+                    error: 'photo is Required and should be less then 1mb',
+                });
         }
 
         const products = await productModel.findByIdAndUpdate(
