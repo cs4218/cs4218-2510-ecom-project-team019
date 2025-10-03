@@ -66,7 +66,7 @@ describe("authController", () => {
       expect(hashPassword).toHaveBeenCalledWith(validUserData.password);
       expect(saveMock).toHaveBeenCalled();
       expect(res.status).toHaveBeenCalledWith(201);
-      expect(res.send).toHaveBeenCalledWith(
+      expect(res.json).toHaveBeenCalledWith(
         expect.objectContaining({
           success: true,
           message: "User Register Successfully",
@@ -79,7 +79,8 @@ describe("authController", () => {
 
       await registerController(req, res);
 
-      expect(res.send).toHaveBeenCalledWith({ error: "Name is Required" });
+      expect(res.status).toHaveBeenCalledWith(400);
+      expect(res.json).toHaveBeenCalledWith({ success: false, message: "Name is required" });
       expect(userModel.findOne).not.toHaveBeenCalled();
     });
 
@@ -88,7 +89,8 @@ describe("authController", () => {
 
       await registerController(req, res);
 
-      expect(res.send).toHaveBeenCalledWith({ message: "Email is Required" });
+      expect(res.status).toHaveBeenCalledWith(400);
+      expect(res.json).toHaveBeenCalledWith({ success: false, message: "Email is required" });
       expect(userModel.findOne).not.toHaveBeenCalled();
     });
 
@@ -97,7 +99,8 @@ describe("authController", () => {
 
       await registerController(req, res);
 
-      expect(res.send).toHaveBeenCalledWith({ message: "Password is Required" });
+      expect(res.status).toHaveBeenCalledWith(400);
+      expect(res.json).toHaveBeenCalledWith({ success: false, message: "Password is required" });
       expect(userModel.findOne).not.toHaveBeenCalled();
     });
 
@@ -106,7 +109,8 @@ describe("authController", () => {
 
       await registerController(req, res);
 
-      expect(res.send).toHaveBeenCalledWith({ message: "Phone no is Required" });
+      expect(res.status).toHaveBeenCalledWith(400);
+      expect(res.json).toHaveBeenCalledWith({ success: false, message: "Phone no is required" });
       expect(userModel.findOne).not.toHaveBeenCalled();
     });
 
@@ -115,7 +119,8 @@ describe("authController", () => {
 
       await registerController(req, res);
 
-      expect(res.send).toHaveBeenCalledWith({ message: "Address is Required" });
+      expect(res.status).toHaveBeenCalledWith(400);
+      expect(res.json).toHaveBeenCalledWith({ success: false, message: "Address is required" });
       expect(userModel.findOne).not.toHaveBeenCalled();
     });
 
@@ -124,7 +129,8 @@ describe("authController", () => {
 
       await registerController(req, res);
 
-      expect(res.send).toHaveBeenCalledWith({ message: "Answer is Required" });
+      expect(res.status).toHaveBeenCalledWith(400);
+      expect(res.json).toHaveBeenCalledWith({ success: false, message: "Answer is required" });
       expect(userModel.findOne).not.toHaveBeenCalled();
     });
 
@@ -137,10 +143,10 @@ describe("authController", () => {
       await registerController(req, res);
 
       expect(userModel.findOne).toHaveBeenCalledWith({ email: validUserData.email });
-      expect(res.status).toHaveBeenCalledWith(200);
-      expect(res.send).toHaveBeenCalledWith({
+      expect(res.status).toHaveBeenCalledWith(409);
+      expect(res.json).toHaveBeenCalledWith({
         success: false,
-        message: "Already Register please login",
+        message: "Already registered, please login",
       });
       expect(hashPassword).not.toHaveBeenCalled();
     });
@@ -156,10 +162,10 @@ describe("authController", () => {
 
       expect(consoleLogSpy).toHaveBeenCalledWith(mockError);
       expect(res.status).toHaveBeenCalledWith(500);
-      expect(res.send).toHaveBeenCalledWith(
+      expect(res.json).toHaveBeenCalledWith(
         expect.objectContaining({
           success: false,
-          message: expect.stringContaining("Registeration"),
+          message: expect.stringContaining("Registration"),
           error: mockError,
         })
       );
@@ -242,9 +248,9 @@ describe("authController", () => {
         { expiresIn: "7d" }
       );
       expect(res.status).toHaveBeenCalledWith(200);
-      expect(res.send).toHaveBeenCalledWith({
+      expect(res.json).toHaveBeenCalledWith({
         success: true,
-        message: "login successfully",
+        message: "Login successfully",
         user: {
           _id: mockUser._id,
           name: mockUser.name,
@@ -262,8 +268,8 @@ describe("authController", () => {
 
       await loginController(req, res);
 
-      expect(res.status).toHaveBeenCalledWith(404);
-      expect(res.send).toHaveBeenCalledWith({
+      expect(res.status).toHaveBeenCalledWith(400);
+      expect(res.json).toHaveBeenCalledWith({
         success: false,
         message: "Invalid email or password",
       });
@@ -275,8 +281,8 @@ describe("authController", () => {
 
       await loginController(req, res);
 
-      expect(res.status).toHaveBeenCalledWith(404);
-      expect(res.send).toHaveBeenCalledWith({
+      expect(res.status).toHaveBeenCalledWith(400);
+      expect(res.json).toHaveBeenCalledWith({
         success: false,
         message: "Invalid email or password",
       });
@@ -288,8 +294,8 @@ describe("authController", () => {
 
       await loginController(req, res);
 
-      expect(res.status).toHaveBeenCalledWith(404);
-      expect(res.send).toHaveBeenCalledWith({
+      expect(res.status).toHaveBeenCalledWith(400);
+      expect(res.json).toHaveBeenCalledWith({
         success: false,
         message: "Invalid email or password",
       });
@@ -305,7 +311,7 @@ describe("authController", () => {
 
       expect(userModel.findOne).toHaveBeenCalledWith({ email: loginData.email });
       expect(res.status).toHaveBeenCalledWith(404);
-      expect(res.send).toHaveBeenCalledWith(
+      expect(res.json).toHaveBeenCalledWith(
         expect.objectContaining({
           success: false,
           message: expect.stringContaining("Email is not registered"),
@@ -327,10 +333,10 @@ describe("authController", () => {
         loginData.password,
         mockUser.password
       );
-      expect(res.status).toHaveBeenCalledWith(200);
-      expect(res.send).toHaveBeenCalledWith({
+      expect(res.status).toHaveBeenCalledWith(400);
+      expect(res.json).toHaveBeenCalledWith({
         success: false,
-        message: "Invalid Password",
+        message: "Invalid password",
       });
       expect(JWT.sign).not.toHaveBeenCalled();
     });
@@ -346,7 +352,7 @@ describe("authController", () => {
 
       expect(consoleLogSpy).toHaveBeenCalledWith(mockError);
       expect(res.status).toHaveBeenCalledWith(500);
-      expect(res.send).toHaveBeenCalledWith({
+      expect(res.json).toHaveBeenCalledWith({
         success: false,
         message: "Error in login",
         error: mockError,
@@ -367,7 +373,7 @@ describe("authController", () => {
 
       expect(consoleLogSpy).toHaveBeenCalledWith(mockError);
       expect(res.status).toHaveBeenCalledWith(500);
-      expect(res.send).toHaveBeenCalledWith({
+      expect(res.json).toHaveBeenCalledWith({
         success: false,
         message: "Error in login",
         error: mockError,
@@ -391,7 +397,7 @@ describe("authController", () => {
 
       expect(consoleLogSpy).toHaveBeenCalledWith(mockError);
       expect(res.status).toHaveBeenCalledWith(500);
-      expect(res.send).toHaveBeenCalledWith({
+      expect(res.json).toHaveBeenCalledWith({
         success: false,
         message: "Error in login",
         error: mockError,
@@ -436,9 +442,9 @@ describe("authController", () => {
         password: hashedPassword,
       });
       expect(res.status).toHaveBeenCalledWith(200);
-      expect(res.send).toHaveBeenCalledWith({
+      expect(res.json).toHaveBeenCalledWith({
         success: true,
-        message: "Password Reset Successfully",
+        message: "Password reset successfully",
       });
     });
 
@@ -450,7 +456,7 @@ describe("authController", () => {
       await forgotPasswordController(req, res);
 
       expect(res.status).toHaveBeenCalledWith(400);
-      expect(res.send).toHaveBeenCalledWith({ message: "Email is required" });
+      expect(res.json).toHaveBeenCalledWith({ message: "Email is required" });
     });
 
     it("should return error if answer is not provided", async () => {
@@ -461,7 +467,7 @@ describe("authController", () => {
       await forgotPasswordController(req, res);
 
       expect(res.status).toHaveBeenCalledWith(400);
-      expect(res.send).toHaveBeenCalledWith({ message: "Answer is required" });
+      expect(res.json).toHaveBeenCalledWith({ message: "Answer is required" });
     });
 
     it("should return error if newPassword is not provided", async () => {
@@ -472,7 +478,7 @@ describe("authController", () => {
       await forgotPasswordController(req, res);
 
       expect(res.status).toHaveBeenCalledWith(400);
-      expect(res.send).toHaveBeenCalledWith({ message: "New Password is required" });
+      expect(res.json).toHaveBeenCalledWith({ message: "New Password is required" });
     });
 
     it("should return error if user is not found with email and answer", async () => {
@@ -487,9 +493,9 @@ describe("authController", () => {
         answer: forgotPasswordData.answer,
       });
       expect(res.status).toHaveBeenCalledWith(404);
-      expect(res.send).toHaveBeenCalledWith({
+      expect(res.json).toHaveBeenCalledWith({
         success: false,
-        message: "Wrong Email Or Answer",
+        message: "Wrong email or answer",
       });
       expect(hashPassword).not.toHaveBeenCalled();
     });
@@ -505,7 +511,7 @@ describe("authController", () => {
 
       expect(consoleLogSpy).toHaveBeenCalledWith(mockError);
       expect(res.status).toHaveBeenCalledWith(500);
-      expect(res.send).toHaveBeenCalledWith({
+      expect(res.json).toHaveBeenCalledWith({
         success: false,
         message: "Something went wrong",
         error: mockError,
@@ -526,7 +532,7 @@ describe("authController", () => {
 
       expect(consoleLogSpy).toHaveBeenCalledWith(mockError);
       expect(res.status).toHaveBeenCalledWith(500);
-      expect(res.send).toHaveBeenCalledWith({
+      expect(res.json).toHaveBeenCalledWith({
         success: false,
         message: "Something went wrong",
         error: mockError,
@@ -549,7 +555,7 @@ describe("authController", () => {
 
       expect(consoleLogSpy).toHaveBeenCalledWith(mockError);
       expect(res.status).toHaveBeenCalledWith(500);
-      expect(res.send).toHaveBeenCalledWith({
+      expect(res.json).toHaveBeenCalledWith({
         success: false,
         message: "Something went wrong",
         error: mockError,
@@ -560,10 +566,28 @@ describe("authController", () => {
   });
 
   describe("testController", () => {
-    it("should return 'Protected Routes' message successfully", () => {
+    it("should return 'Protected routes' message successfully", () => {
       testController(req, res);
 
-      expect(res.send).toHaveBeenCalledWith("Protected Routes");
+      expect(res.send).toHaveBeenCalledWith("Protected routes");
+    });
+
+    it("should handle errors in test controller", () => {
+      const mockError = new Error("Test error");
+      const consoleLogSpy = jest.spyOn(console, "log").mockImplementation();
+      
+      // Mock res.send to throw an error
+      res.send = jest.fn(() => {
+        throw mockError;
+      });
+
+      testController(req, res);
+
+      expect(consoleLogSpy).toHaveBeenCalledWith(mockError);
+      expect(res.status).toHaveBeenCalledWith(500);
+      expect(res.json).toHaveBeenCalledWith({ error: mockError });
+
+      consoleLogSpy.mockRestore();
     });
   });
 });
