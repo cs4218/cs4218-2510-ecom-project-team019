@@ -1,9 +1,32 @@
+# Dependencies
 node_modules
+
+# Build output
+dist/
+build/
+
+# Test results and coverage
 /test-results/
 /playwright-report/
 /blob-report/
 /playwright/.cache/
+coverage/
+.scannerwork/
 
+# Logs
+*.log
+
+# Environment files
 .env
+*.local
 
-/coverage/*
+# IDE/editor
+.vscode/
+.idea/
+
+# OS metadata
+.DS_Store
+
+# ESLint cache
+.eslintcache
+

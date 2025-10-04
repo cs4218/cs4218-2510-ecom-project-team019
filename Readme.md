@@ -104,6 +104,45 @@ To download and use the MERN (MongoDB, Express.js, React.js, Node.js) app from G
    - Use `npm run dev` to run the app from root directory, which starts the development server.
    - Navigate to `http://localhost:3000` to access the application.
 
+
+### 4. Setting up SonarQube
+
+SonarQube consists of 2 parts:
+- Server -> the UI portion which is accessible via `http://localhost:9000/`
+- Scanner -> a dependency installed via npm, should be already in your `package.json`
+
+</br>
+
+To download and link SonarQube to this project, follow the following steps:
+
+1. **Download and run SonarQube**
+
+  - Download the zip file from `https://docs.sonarsource.com/sonarqube-server/server-installation/from-zip-file/basic-installation`
+  - Make sure you have JDK17 installed
+  - Unzip the zip file (if using WSL, please unzip it in your linux directory)
+  - Run the `sonar.sh`, details of where it is found -> `https://docs.sonarsource.com/sonarqube-server/server-installation/from-zip-file/starting-stopping-server/from-zip-file`
+
+2. **Set up SonarQube**
+
+  - After running SonarQube, access it at localhost:9000
+    - Login: admin
+    - Password: admin
+  - You will be asked to update your password
+  - Go to My Account -> Security and create a User token
+    - Paste your token into the `sonar-project.properties` file
+
+3. **Generating SonarQube Report**
+  
+  - Run tests with Jest (with coverage)
+  - Run SonarQube Server (you should be able to access it at `http://localhost:9000/`)
+  - Run SonarQube Scanner using `npm run sonarqube`
+  - Click the link in the output to view the results
+
+4. **Stop SonarQube**
+
+  - Execute `sonar.sh stop`
+
+
 ## 5. Unit Testing with Jest
 
 Unit testing is a crucial aspect of software development aimed at verifying the functionality of individual units or components of a software application. It involves isolating these units and subjecting them to various test scenarios to ensure their correctness.  
