@@ -80,9 +80,7 @@ describe("authHelper", () => {
 
       bcrypt.compare.mockRejectedValue(mockError);
 
-      await expect(comparePassword(password, hashedPassword)).rejects.toThrow(
-        "Compare failed"
-      );
+      await expect(comparePassword(password, hashedPassword)).rejects.toThrow("Compare failed");
       expect(bcrypt.compare).toHaveBeenCalledWith(password, hashedPassword);
     });
 
