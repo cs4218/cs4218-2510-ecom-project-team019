@@ -14,19 +14,23 @@ const CreateCategory = () => {
   //handle Form
   const handleSubmit = async (e) => {
     e.preventDefault();
+
     try {
       const { data } = await axios.post("/api/v1/category/create-category", {
         name,
       });
       if (data?.success) {
         toast.success(`${name} is created`);
+        setName(""); 
         getAllCategory();
-      } else {
-        toast.error(data.message);
-      }
+      } 
     } catch (error) {
       console.log(error);
-      toast.error("somthing went wrong in input form");
+      if (error.response) {
+        toast.error(error.response.data.message);
+      } else {
+        toast.error("Something went wrong in input form");
+      }
     }
   };
 
@@ -39,7 +43,7 @@ const CreateCategory = () => {
       }
     } catch (error) {
       console.log(error);
-      toast.error("Something wwent wrong in getting catgeory");
+      toast.error("Something went wrong in getting category");
     }
   };
 
@@ -61,11 +65,13 @@ const CreateCategory = () => {
         setUpdatedName("");
         setVisible(false);
         getAllCategory();
-      } else {
-        toast.error(data.message);
       }
     } catch (error) {
-      toast.error("Somtihing went wrong");
+      if (error.response) {
+        toast.error(error.response.data.message);
+      } else {
+      toast.error("Something went wrong");
+      }
     }
   };
   //delete category
@@ -75,14 +81,14 @@ const CreateCategory = () => {
         `/api/v1/category/delete-category/${pId}`
       );
       if (data.success) {
-        toast.success(`category is deleted`);
+        toast.success(`Category is deleted`);
 
         getAllCategory();
       } else {
         toast.error(data.message);
       }
     } catch (error) {
-      toast.error("Somtihing went wrong");
+      toast.error("Something went wrong");
     }
   };
   return (
