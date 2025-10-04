@@ -1,6 +1,6 @@
 import { jest } from '@jest/globals';
 
-// 🟢 Set up mocks BEFORE imports
+// Set up mocks before imports
 jest.unstable_mockModule('../models/categoryModel.js', () => {
   const mockCategoryModel = jest.fn(); // behaves like a constructor
   mockCategoryModel.prototype.save = jest.fn(); // instance method
@@ -20,7 +20,7 @@ jest.unstable_mockModule('slugify', () => ({
   default: jest.fn((str) => `mocked-${str}`),
 }));
 
-// 🟢 Import AFTER mocks are declared
+// Import after mocks are declared
 const categoryModel = (await import('../models/categoryModel.js')).default;
 const slugify = (await import('slugify')).default;
 const {

@@ -309,7 +309,7 @@ describe('CreateCategory Page - Update Functionality', () => {
         axios.get.mockResolvedValueOnce({
             data: { success: true, category: initialCategories },
         });
-        axios.post.mockRejectedValueOnce({
+        axios.put.mockRejectedValueOnce({
             response: { data: { message: errorMessage } },
         });
 
