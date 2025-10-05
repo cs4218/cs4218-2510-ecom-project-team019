@@ -30,4 +30,4 @@ jobs: # workflows are divided into jobs. This workflow has 1 job called test
           npm install
 
       - name: Run Jest tests # run your test suite using Jest
-        run: npm run test
+        run: npm run test:frontend

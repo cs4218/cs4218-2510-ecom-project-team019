@@ -12,9 +12,9 @@ export default {
   collectCoverage: true,
   collectCoverageFrom: ["controllers/**"],
   coverageThreshold: {
-    global: { // require 1% of lines and function coverage (so that can pass the GitHub Actions workflow)
-      lines: 1,
-      functions: 1,
+    global: {
+      lines: 100,
+      functions: 100,
     },
   },
 };

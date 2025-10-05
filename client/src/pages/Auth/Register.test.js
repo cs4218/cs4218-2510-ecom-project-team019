@@ -18,10 +18,7 @@ jest.mock('../../context/cart', () => ({
     useCart: jest.fn(() => [null, jest.fn()]), // Mock useCart hook to return null state and a mock function
 }));
 
-jest.mock('../../hooks/useCategory', () => ({
-    __esModule: true,
-    default: jest.fn(() => []), // returns empty categories array
-}));
+jest.mock('../../hooks/useCategory', () => jest.fn(() => [])); // Mock useCategory hook to an empty array
 
 jest.mock('../../context/search', () => ({
     useSearch: jest.fn(() => [{ keyword: '' }, jest.fn()]), // Mock useSearch hook to return null state and a mock function
@@ -94,7 +91,7 @@ describe('Register Component', () => {
 
     it('should display error message on failed registration', async () => {
         axios.post.mockRejectedValueOnce({ message: 'User already exists' });
-
+        
         const { getByText, getByPlaceholderText } = render(
             <MemoryRouter initialEntries={['/register']}>
                 <Routes>

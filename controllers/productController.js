@@ -10,7 +10,7 @@ import dotenv from 'dotenv';
 dotenv.config();
 
 //payment gateway
-export const gateway = new braintree.BraintreeGateway({
+var gateway = new braintree.BraintreeGateway({
     environment: braintree.Environment.Sandbox,
     merchantId: process.env.BRAINTREE_MERCHANT_ID,
     publicKey: process.env.BRAINTREE_PUBLIC_KEY,
@@ -340,66 +340,49 @@ export const productCategoryController = async (req, res) => {
 //payment gateway api
 //token
 export const braintreeTokenController = async (req, res) => {
-  try {
-    gateway.clientToken.generate({}, function (err, response) {
-      if (err) {
-        res.status(500).json({ ok: false, error: err });
-      } else {
-        res.json({ ok: true });
-      }
-    });
-  } catch (error) {
-    res.status(500).json({ ok: false, error: error });
-  }
+    try {
+        gateway.clientToken.generate({}, function (err, response) {
+            if (err) {
+                res.status(500).send(err);
+            } else {
+                res.send(response);
+            }
+        });
+    } catch (error) {
+        console.log(error);
+    }
 };
 
 //payment
 export const brainTreePaymentController = async (req, res) => {
-  try {
-    const { nonce, cart } = req.body;
-
-    if (!nonce || !cart) {
-      return res.status(400).json({ ok: false, message: "Missing nonce or cart" });
+    try {
+        const { nonce, cart } = req.body;
+        let total = 0;
+        cart.map((i) => {
+            total += i.price;
+        });
+        let newTransaction = gateway.transaction.sale(
+            {
+                amount: total,
+                paymentMethodNonce: nonce,
+                options: {
+                    submitForSettlement: true,
+                },
+            },
+            function (error, result) {
+                if (result) {
+                    const order = new orderModel({
+                        products: cart,
+                        payment: result,
+                        buyer: req.user._id,
+                    }).save();
+                    res.json({ ok: true });
+                } else {
+                    res.status(500).send(error);
+                }
+            }
+        );
+    } catch (error) {
+        console.log(error);
     }
-
-    let total = 0;
-    cart.forEach((i) => {
-      total += i.price;
-    });
-
-    gateway.transaction.sale(
-      {
-        amount: total.toFixed(2), // Braintree expects string with 2 decimals
-        paymentMethodNonce: nonce,
-        options: {
-          submitForSettlement: true,
-        },
-      },
-      async (error, result) => {
-        if (error) {
-          res.status(500).json({ ok: false, error });
-          return
-        }
-
-        if (result && result.success) {
-          try {
-            await new orderModel({
-              products: cart,
-              payment: result,
-              buyer: req.user._id,
-            }).save();
-
-            res.json({ ok: true, transaction: result });
-          } catch (dbError) {
-            res.status(500).json({ ok: false, error: dbError });
-          }
-        } else {
-          res.status(500).json({ ok: false, error: result });
-        }
-      }
-    );
-  } catch (error) {
-    console.error(err);
-    res.status(500).json({ ok: false, error: err.message });
-  }
 };
