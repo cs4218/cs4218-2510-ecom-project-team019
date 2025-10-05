@@ -11,11 +11,9 @@ const Login = () => {
   const [password, setPassword] = useState("");
   const [auth, setAuth] = useAuth();
   
-
   const navigate = useNavigate();
   const location = useLocation();
   
-
   // form function
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -53,7 +51,6 @@ const Login = () => {
       <div className="form-container " style={{ minHeight: "90vh" }}>
         <form onSubmit={handleSubmit}>
           <h4 className="title">LOGIN FORM</h4>
-
           <div className="mb-3">
             <input
               type="email"
@@ -88,7 +85,6 @@ const Login = () => {
               Forgot Password
             </button>
           </div>
-
           <button type="submit" className="btn btn-primary">
             LOGIN
           </button>

@@ -1,4 +1,4 @@
-import { useState, useContext, createContext, useEffect } from "react";
+import React, { useState, useContext, createContext, useEffect } from "react";
 import axios from "axios";
 
 const AuthContext = createContext();
@@ -15,12 +15,16 @@ const AuthProvider = ({ children }) => {
     useEffect(() => {
        const data = localStorage.getItem("auth");
        if (data) {
-        const parseData = JSON.parse(data);
-        setAuth({
-            ...auth,
-            user: parseData.user,
-            token: parseData.token,
-        });
+        try {
+          const parseData = JSON.parse(data);
+          setAuth({
+              user: parseData.user,
+              token: parseData.token,
+          });
+        } catch (error) {
+          // Handle invalid JSON gracefully
+        //   console.log("Error parsing auth data from localStorage", error);
+        }
        }
        //eslint-disable-next-line
     }, []);
