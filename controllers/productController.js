@@ -22,23 +22,25 @@ export const createProductController = async (req, res) => {
         const { name, description, price, category, quantity, shipping } =
             req.fields;
         const { photo } = req.files;
-        //alidation
+        // Validation
         switch (true) {
             case !name:
-                return res.status(500).send({ error: 'Name is Required' });
+                return res.status(400).json({ error: 'Name is required' });
             case !description:
                 return res
-                    .status(500)
-                    .send({ error: 'Description is Required' });
+                    .status(400)
+                    .json({ error: 'Description is required' });
             case !price:
-                return res.status(500).send({ error: 'Price is Required' });
+                return res.status(400).json({ error: 'Price is required' });
             case !category:
-                return res.status(500).send({ error: 'Category is Required' });
+                return res.status(400).json({ error: 'Category is required' });
             case !quantity:
-                return res.status(500).send({ error: 'Quantity is Required' });
+                return res.status(400).json({ error: 'Quantity is required' });
+            case !shipping:
+                return res.status(400).json({ error: 'Shipping is required' });
             case photo && photo.size > 1000000:
-                return res.status(500).send({
-                    error: 'photo is Required and should be less then 1mb',
+                return res.status(400).json({
+                    error: 'Photo provided should be less than 1MB',
                 });
         }
 
@@ -51,17 +53,17 @@ export const createProductController = async (req, res) => {
             products.photo.contentType = photo.type;
         }
         await products.save();
-        res.status(201).send({
+        res.status(201).json({
             success: true,
-            message: 'Product Created Successfully',
+            message: 'Product created successfully',
             products,
         });
     } catch (error) {
-        console.log(error);
-        res.status(500).send({
+        console.error(error);
+        res.status(500).json({
             success: false,
-            error,
-            message: 'Error in crearing product',
+            error: error.message,
+            message: 'Error while creating product',
         });
     }
 };
@@ -75,17 +77,17 @@ export const getProductController = async (req, res) => {
             .select('-photo')
             .limit(12)
             .sort({ createdAt: -1 });
-        res.status(200).send({
+        res.status(200).json({
             success: true,
-            counTotal: products.length,
+            length: products.length,
             message: 'All Products',
             products,
         });
     } catch (error) {
-        console.log(error);
-        res.status(500).send({
+        console.error(error);
+        res.status(500).json({
             success: false,
-            message: 'Erorr in getting products',
+            message: 'Error in getting products',
             error: error.message,
         });
     }
@@ -97,17 +99,26 @@ export const getSingleProductController = async (req, res) => {
             .findOne({ slug: req.params.slug })
             .select('-photo')
             .populate('category');
-        res.status(200).send({
+
+        // If no product found, return 404
+        if (!product) {
+            return res.status(404).json({
+                success: false,
+                message: 'Product not found',
+            });
+        }
+
+        res.status(200).json({
             success: true,
-            message: 'Single Product Fetched',
+            message: 'Single product fetched',
             product,
         });
     } catch (error) {
-        console.log(error);
-        res.status(500).send({
+        console.error(error);
+        res.status(500).json({
             success: false,
-            message: 'Eror while getitng single product',
-            error,
+            message: 'Error while getting single product',
+            error: error.message,
         });
     }
 };
@@ -118,61 +129,63 @@ export const productPhotoController = async (req, res) => {
         const product = await productModel
             .findById(req.params.pid)
             .select('photo');
-        if (product.photo.data) {
-            res.set('Content-type', product.photo.contentType);
+
+        if (product && product.photo.data) {
+            res.set('Content-Type', product.photo.contentType);
             return res.status(200).send(product.photo.data);
+        } else {
+            return res.status(404).send('Photo not found');
         }
     } catch (error) {
-        console.log(error);
-        res.status(500).send({
-            success: false,
-            message: 'Erorr while getting photo',
-            error,
-        });
+        console.error(error);
+        res.status(500).send('Internal Server Error');
     }
 };
 
-//delete controller
+// Delete controller
 export const deleteProductController = async (req, res) => {
     try {
         await productModel.findByIdAndDelete(req.params.pid).select('-photo');
-        res.status(200).send({
+        res.status(200).json({
             success: true,
-            message: 'Product Deleted successfully',
+            message: 'Product deleted successfully',
         });
     } catch (error) {
-        console.log(error);
-        res.status(500).send({
+        console.error(error);
+        res.status(500).json({
             success: false,
             message: 'Error while deleting product',
-            error,
+            error: error.message,
         });
     }
 };
 
-//upate producta
+// Update products
 export const updateProductController = async (req, res) => {
     try {
         const { name, description, price, category, quantity, shipping } =
             req.fields;
         const { photo } = req.files;
-        //alidation
+
+        // Validation
         switch (true) {
             case !name:
-                return res.status(500).send({ error: 'Name is Required' });
+                return res.status(400).json({ error: 'Name is required' });
             case !description:
                 return res
-                    .status(500)
-                    .send({ error: 'Description is Required' });
+                    .status(400)
+                    .json({ error: 'Description is required' });
             case !price:
-                return res.status(500).send({ error: 'Price is Required' });
+                return res.status(400).json({ error: 'Price is required' });
             case !category:
-                return res.status(500).send({ error: 'Category is Required' });
+                return res.status(400).json({ error: 'Category is required' });
             case !quantity:
-                return res.status(500).send({ error: 'Quantity is Required' });
+                return res.status(400).json({ error: 'Quantity is required' });
+            case !shipping:
+                return res.status(400).json({ error: 'Shipping is required' });
             case photo && photo.size > 1000000:
-                return res.status(500).send({
-                    error: 'photo is Required and should be less then 1mb',
+                return res.status(400).json({
+                    error: 'Photo provided should be less than 1MB',
                 });
         }
 
@@ -182,66 +195,68 @@ export const updateProductController = async (req, res) => {
             { new: true }
         );
         if (photo) {
+            products.photo = products.photo ?? {};
             products.photo.data = fs.readFileSync(photo.path);
             products.photo.contentType = photo.type;
         }
         await products.save();
-        res.status(201).send({
+        res.status(201).json({
             success: true,
-            message: 'Product Updated Successfully',
+            message: 'Product updated successfully',
             products,
         });
     } catch (error) {
-        console.log(error);
-        res.status(500).send({
+        console.error(error);
+        res.status(500).json({
             success: false,
-            error,
-            message: 'Error in Updte product',
+            error: error.message,
+            message: 'Error while updating product',
         });
     }
 };
 
-// filters
+// Product filters
 export const productFiltersController = async (req, res) => {
     try {
         const { checked, radio } = req.body;
         let args = {};
         if (checked.length > 0) args.category = checked;
-        if (radio.length) args.price = { $gte: radio[0], $lte: radio[1] };
+        if (radio.length === 2) args.price = { $gte: radio[0], $lte: radio[1] };
         const products = await productModel.find(args);
-        res.status(200).send({
+        res.status(200).json({
             success: true,
             products,
         });
     } catch (error) {
-        console.log(error);
-        res.status(400).send({
+        console.error(error);
+        res.status(500).json({
             success: false,
-            message: 'Error WHile Filtering Products',
-            error,
+            message: 'Error while filtering products',
+            error: error.message,
         });
     }
 };
 
-// product count
+// Product count
 export const productCountController = async (req, res) => {
     try {
         const total = await productModel.find({}).estimatedDocumentCount();
-        res.status(200).send({
+        res.status(200).json({
             success: true,
             total,
+            message: 'Product count fetched',
         });
     } catch (error) {
-        console.log(error);
-        res.status(400).send({
-            message: 'Error in product count',
-            error,
+        console.error(error);
+        res.status(500).json({
+            message: 'Error in getting product count',
+            error: error.message,
             success: false,
         });
     }
 };
 
-// product list base on page
+// Product list based on page
 export const productListController = async (req, res) => {
     try {
         const perPage = 6;
@@ -252,16 +267,16 @@ export const productListController = async (req, res) => {
             .skip((page - 1) * perPage)
             .limit(perPage)
             .sort({ createdAt: -1 });
-        res.status(200).send({
+        res.status(200).json({
             success: true,
             products,
         });
     } catch (error) {
-        console.log(error);
-        res.status(400).send({
+        console.error(error);
+        res.status(500).json({
             success: false,
-            message: 'error in per page ctrl',
-            error,
+            message: 'Error in getting products by page',
+            error: error.message,
         });
     }
 };
@@ -270,7 +285,7 @@ export const productListController = async (req, res) => {
 export const searchProductController = async (req, res) => {
     try {
         const { keyword } = req.params;
-        const resutls = await productModel
+        const results = await productModel
             .find({
                 $or: [
                     { name: { $regex: keyword, $options: 'i' } },
@@ -278,19 +293,19 @@ export const searchProductController = async (req, res) => {
                 ],
             })
             .select('-photo');
-        res.json(resutls);
+        res.status(200).json(results);
     } catch (error) {
-        console.log(error);
-        res.status(400).send({
+        console.error(error);
+        res.status(500).json({
             success: false,
-            message: 'Error In Search Product API',
-            error,
+            message: 'Error in Search Product API',
+            error: error.message,
         });
     }
 };
 
 // similar products
-export const realtedProductController = async (req, res) => {
+export const relatedProductController = async (req, res) => {
     try {
         const { pid, cid } = req.params;
         const products = await productModel
@@ -301,16 +316,16 @@ export const realtedProductController = async (req, res) => {
             .select('-photo')
             .limit(3)
             .populate('category');
-        res.status(200).send({
+        res.status(200).json({
             success: true,
             products,
         });
     } catch (error) {
-        console.log(error);
-        res.status(400).send({
+        console.error(error);
+        res.status(500).json({
             success: false,
-            message: 'error while geting related product',
-            error,
+            message: 'Error while getting related product',
+            error: error.message,
         });
     }
 };
@@ -322,17 +337,17 @@ export const productCategoryController = async (req, res) => {
         const products = await productModel
             .find({ category })
             .populate('category');
-        res.status(200).send({
+        res.status(200).json({
             success: true,
             category,
             products,
         });
     } catch (error) {
-        console.log(error);
-        res.status(400).send({
+        console.error(error);
+        res.status(500).json({
             success: false,
-            error,
-            message: 'Error While Getting products',
+            error: error.message,
+            message: 'Error while getting products by category',
         });
     }
 };
