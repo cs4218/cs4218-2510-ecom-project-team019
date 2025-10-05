@@ -60,4 +60,20 @@ describe('Order Model', () => {
         await expect(order.save()).resolves.not.toThrow();
         expect(order.status).toBe('Processing');
     });
+
+    it('should require products as ObjectId array', async () => {
+        const orderData = {
+            products: ['notAnObjectId'],
+            payment: {},
+            buyer: new mongoose.Types.ObjectId(),
+        };
+        const order = new Order(orderData);
+        let err;
+        try {
+            await order.save();
+        } catch (error) {
+            err = error;
+        }
+        expect(err).toBeDefined();
+    });
 });
