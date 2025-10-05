@@ -20,7 +20,7 @@ export const createCategoryController = async (req, res) => {
       name,
       slug: slugify(name),
     }).save();
-    res.status(200).send({
+    res.status(201).send({
       success: true,
       message: "New category created",
       category,

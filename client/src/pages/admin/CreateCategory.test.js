@@ -1,4 +1,3 @@
-/* eslint-disable testing-library/no-wait-for-multiple-assertions */
 import React from 'react';
 import { render, screen, fireEvent, waitFor, within } from '@testing-library/react';
 import axios from 'axios';

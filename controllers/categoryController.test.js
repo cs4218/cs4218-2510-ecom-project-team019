@@ -1,35 +1,29 @@
 import { jest } from '@jest/globals';
 
-// Set up mocks before imports
-jest.unstable_mockModule('../models/categoryModel.js', () => {
-  const mockCategoryModel = jest.fn(); // behaves like a constructor
-  mockCategoryModel.prototype.save = jest.fn(); // instance method
-
-  // add static methods
-  mockCategoryModel.findOne = jest.fn();
-  mockCategoryModel.find = jest.fn();
-  mockCategoryModel.findByIdAndUpdate = jest.fn();
-  mockCategoryModel.findByIdAndDelete = jest.fn();
-  mockCategoryModel.create = jest.fn();
-
-  return { default: mockCategoryModel };
-});
-
-
-jest.unstable_mockModule('slugify', () => ({
-  default: jest.fn((str) => `mocked-${str}`),
-}));
-
-// Import after mocks are declared
-const categoryModel = (await import('../models/categoryModel.js')).default;
-const slugify = (await import('slugify')).default;
+const categoryModel = require('../models/categoryModel.js');
+const slugify = require('slugify');
 const {
   createCategoryController,
   updateCategoryController,
   categoryController,
   singleCategoryController,
   deleteCategoryController,
-} = await import('./categoryController.js');
+} = require('./categoryController.js');
+
+// Mock the modules
+jest.mock('../models/categoryModel.js', () => {
+  const mockCategoryModel = jest.fn();
+  mockCategoryModel.prototype.save = jest.fn();
+  mockCategoryModel.findOne = jest.fn();
+  mockCategoryModel.find = jest.fn();
+  mockCategoryModel.findByIdAndUpdate = jest.fn();
+  mockCategoryModel.findByIdAndDelete = jest.fn();
+  mockCategoryModel.create = jest.fn();
+  return mockCategoryModel;
+});
+
+jest.mock('slugify');
+
 
 describe('Category Controller', () => {
     let req, res;
@@ -71,7 +65,7 @@ describe('Category Controller', () => {
             });
         });
 
-        it('should create a new category and return 200', async () => {
+        it('should create a new category and return 201', async () => {
             req.body.name = 'Test Category';
             categoryModel.findOne.mockResolvedValue(null);
             const newCategory = { name: 'Test Category', slug: 'test-category' };
@@ -82,7 +76,7 @@ describe('Category Controller', () => {
 
             await createCategoryController(req, res);
 
-            expect(res.status).toHaveBeenCalledWith(200);
+            expect(res.status).toHaveBeenCalledWith(201);
             expect(res.send).toHaveBeenCalledWith({
                 success: true,
                 message: 'New category created',
