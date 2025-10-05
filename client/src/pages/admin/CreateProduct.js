@@ -46,7 +46,11 @@ const CreateProduct = () => {
             productData.append('quantity', quantity);
             productData.append('photo', photo);
             productData.append('category', category);
-            const { data } = axios.post(
+            productData.append('shipping', shipping);
+            console.log('🧾 category during submit:', category);
+            console.log('🧾 shipping during submit:', category);
+
+            const { data } = await axios.post(
                 '/api/v1/product/create-product',
                 productData
             );
@@ -90,7 +94,7 @@ const CreateProduct = () => {
                             </Select>
                             <div className="mb-3">
                                 <label className="btn btn-outline-secondary col-md-12">
-                                    {photo ? photo.name : 'Upload Photo'}
+                                    {photo ? photo.name : 'Upload photo'}
                                     <input
                                         type="file"
                                         name="photo"
@@ -118,7 +122,7 @@ const CreateProduct = () => {
                                 <input
                                     type="text"
                                     value={name}
-                                    placeholder="write a name"
+                                    placeholder="Enter name"
                                     className="form-control"
                                     onChange={(e) => setName(e.target.value)}
                                 />
@@ -127,7 +131,7 @@ const CreateProduct = () => {
                                 <textarea
                                     type="text"
                                     value={description}
-                                    placeholder="write a description"
+                                    placeholder="Enter description"
                                     className="form-control"
                                     onChange={(e) =>
                                         setDescription(e.target.value)
@@ -139,7 +143,7 @@ const CreateProduct = () => {
                                 <input
                                     type="number"
                                     value={price}
-                                    placeholder="write a Price"
+                                    placeholder="Enter price"
                                     className="form-control"
                                     onChange={(e) => setPrice(e.target.value)}
                                 />
@@ -148,7 +152,7 @@ const CreateProduct = () => {
                                 <input
                                     type="number"
                                     value={quantity}
-                                    placeholder="write a quantity"
+                                    placeholder="Enter quantity"
                                     className="form-control"
                                     onChange={(e) =>
                                         setQuantity(e.target.value)
@@ -158,7 +162,7 @@ const CreateProduct = () => {
                             <div className="mb-3">
                                 <Select
                                     bordered={false}
-                                    placeholder="Select Shipping "
+                                    placeholder="Select shipping"
                                     size="large"
                                     showSearch
                                     className="form-select mb-3"

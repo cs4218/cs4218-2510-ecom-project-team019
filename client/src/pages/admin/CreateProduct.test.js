@@ -1,5 +1,11 @@
 import React from 'react';
-import { render, screen, waitFor, fireEvent } from '@testing-library/react';
+import {
+    act,
+    render,
+    screen,
+    waitFor,
+    fireEvent,
+} from '@testing-library/react';
 import axios from 'axios';
 import { MemoryRouter } from 'react-router-dom';
 import toast from 'react-hot-toast';
@@ -44,6 +50,32 @@ jest.mock('../../context/search', () => ({
     useSearch: jest.fn(() => [{ keyword: '' }, jest.fn()]), // Mock useSearch hook to return null state and a mock function
 }));
 
+// Stub Ant Design
+jest.mock('antd', () => {
+    const actual = jest.requireActual('antd');
+    const MockSelect = ({ placeholder, onChange, children }) => (
+        <select
+            data-testid={placeholder || 'select'}
+            onChange={(e) => onChange(e.target.value)}
+        >
+            {children}
+        </select>
+    );
+
+    const MockOption = ({ value, children }) => (
+        <option value={value}>{children}</option>
+    );
+
+    MockSelect.Option = MockOption;
+
+    return {
+        __esModule: true,
+        ...actual,
+        Select: MockSelect,
+        Option: MockOption,
+    };
+});
+
 describe('CreateProduct component', () => {
     it('logs error on category fetch failure', async () => {
         // Spy on console.log to verify error logging
@@ -73,7 +105,8 @@ describe('CreateProduct component', () => {
     it('renders Create Product heading and button on success', async () => {
         axios.get.mockResolvedValueOnce({
             data: {
-                products: [],
+                success: true,
+                category: [{}],
             },
         });
 
@@ -90,6 +123,90 @@ describe('CreateProduct component', () => {
             expect(
                 screen.getByRole('button', { name: /CREATE PRODUCT/i })
             ).toBeInTheDocument();
+        });
+    });
+
+    it('submits form and shows success message', async () => {
+        axios.get.mockResolvedValueOnce({
+            data: {
+                success: true,
+                category: [{ name: 'Cat1', slug: 'cat1', _id: 'cat123' }],
+            },
+        });
+
+        axios.post.mockResolvedValueOnce({
+            data: { success: true, message: 'Product Created' },
+        });
+
+        render(
+            <MemoryRouter>
+                <CreateProduct />
+            </MemoryRouter>
+        );
+
+        fireEvent.change(screen.getByPlaceholderText(/Enter name/i), {
+            target: { value: 'Test Product' },
+        });
+        fireEvent.change(screen.getByPlaceholderText(/Enter description/i), {
+            target: { value: 'Test Desc' },
+        });
+        fireEvent.change(screen.getByPlaceholderText(/Enter price/i), {
+            target: { value: '100' },
+        });
+        fireEvent.change(screen.getByPlaceholderText(/Enter quantity/i), {
+            target: { value: '5' },
+        });
+
+        await waitFor(() =>
+            expect(screen.getByText('Cat1')).toBeInTheDocument()
+        );
+
+        // simulate selecting category + shipping
+        // Open "Select a category"
+        fireEvent.change(screen.getByTestId('Select a category'), {
+            target: { value: 'cat123' },
+        });
+
+        // Open "Select Shipping"
+        fireEvent.change(screen.getByTestId('Select shipping'), {
+            target: { value: '1' },
+        });
+
+        // ensure select values are updated
+        await waitFor(() => {
+            expect(screen.getByTestId('Select a category').value).toBe(
+                'cat123'
+            );
+            expect(screen.getByTestId('Select shipping').value).toBe('1');
+        });
+
+        await act(async () => {
+            // click submit
+            fireEvent.click(
+                screen.getByRole('button', { name: /create product/i })
+            );
+        });
+
+        expect(axios.post).toHaveBeenCalledWith(
+            '/api/v1/product/create-product',
+            expect.any(FormData)
+        );
+
+        // verify that the FormData contains the correct fields
+        const calledData = axios.post.mock.calls[0][1];
+        const dataObj = {};
+        for (const [key, value] of calledData.entries()) {
+            dataObj[key] = value;
+        }
+
+        expect(dataObj).toEqual({
+            name: 'Test Product',
+            description: 'Test Desc',
+            price: '100',
+            quantity: '5',
+            category: 'cat123',
+            shipping: '1',
+            photo: '',
         });
     });
 });
