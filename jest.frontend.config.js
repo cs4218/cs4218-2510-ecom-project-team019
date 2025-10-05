@@ -24,7 +24,7 @@ export default {
 
   // jest code coverage
   collectCoverage: true,
-  collectCoverageFrom: ["client/src/pages/**", "client/src/context/auth.test.js"],
+  collectCoverageFrom: ["client/src/**"],
   coverageThreshold: {
     global: { // require 1% of lines and function coverage (so that can pass the GitHub Actions workflow)
       lines: 1,
