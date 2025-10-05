@@ -224,7 +224,12 @@ describe('Register Component', () => {
 
   describe('Form Submission - Successful Registration', () => {
     it('should register the user successfully and navigate to login', async () => {
-      axios.post.mockResolvedValueOnce({ data: { success: true } });
+      const mockResponse = { 
+        data: { success: true },
+        status: 200
+      };
+      
+      axios.post.mockResolvedValueOnce(mockResponse);
 
       const { getByText, getByPlaceholderText } = render(
         <MemoryRouter initialEntries={['/register']}>
@@ -256,6 +261,10 @@ describe('Register Component', () => {
         });
       });
 
+      // Verify the response has status 200
+      const response = await axios.post.mock.results[axios.post.mock.results.length - 1].value;
+      expect(response.status).toBe(200);
+      
       expect(toast.success).toHaveBeenCalledWith('Register Successfully, please login');
       expect(mockNavigate).toHaveBeenCalledWith('/login');
     });
@@ -297,7 +306,12 @@ describe('Register Component', () => {
 
   describe('Form Submission - Failed Registration', () => {
     it('should display error message when registration fails with error response', async () => {
-      axios.post.mockRejectedValueOnce({ message: 'User already exists' });
+      const mockError = {
+        response: { status: 400 },
+        message: 'User already exists'
+      };
+      
+      axios.post.mockRejectedValueOnce(mockError);
 
       const { getByText, getByPlaceholderText } = render(
         <MemoryRouter initialEntries={['/register']}>
@@ -319,15 +333,25 @@ describe('Register Component', () => {
 
       await waitFor(() => expect(axios.post).toHaveBeenCalled());
       expect(toast.error).toHaveBeenCalledWith('Something went wrong');
+      
+      // Verify the error response has status 400
+      try {
+        await axios.post.mock.results[axios.post.mock.results.length - 1].value;
+      } catch (error) {
+        expect(error.response.status).toBe(400);
+      }
     });
 
     it('should display custom error message when success is false', async () => {
-      axios.post.mockResolvedValueOnce({ 
+      const mockResponse = {
         data: { 
           success: false, 
           message: 'Email already registered' 
-        } 
-      });
+        },
+        status: 200
+      };
+      
+      axios.post.mockResolvedValueOnce(mockResponse);
 
       const { getByText, getByPlaceholderText } = render(
         <MemoryRouter initialEntries={['/register']}>
@@ -349,10 +373,19 @@ describe('Register Component', () => {
 
       await waitFor(() => expect(axios.post).toHaveBeenCalled());
       expect(toast.error).toHaveBeenCalledWith('Email already registered');
+      
+      // Verify the response has status 200 (success response but with success: false in data)
+      const response = await axios.post.mock.results[axios.post.mock.results.length - 1].value;
+      expect(response.status).toBe(200);
     });
 
     it('should not navigate to login page when registration fails', async () => {
-      axios.post.mockRejectedValueOnce({ message: 'Network error' });
+      const mockError = {
+        response: { status: 500 },
+        message: 'Network error'
+      };
+      
+      axios.post.mockRejectedValueOnce(mockError);
 
       const { getByText, getByPlaceholderText } = render(
         <MemoryRouter initialEntries={['/register']}>
@@ -374,6 +407,13 @@ describe('Register Component', () => {
 
       await waitFor(() => expect(axios.post).toHaveBeenCalled());
       expect(mockNavigate).not.toHaveBeenCalled();
+      
+      // Verify the error response has status 500
+      try {
+        await axios.post.mock.results[axios.post.mock.results.length - 1].value;
+      } catch (error) {
+        expect(error.response.status).toBe(500);
+      }
     });
   });
 

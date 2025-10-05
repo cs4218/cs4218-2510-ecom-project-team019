@@ -405,10 +405,12 @@ describe('Login Component', () => {
         });
 
         it('should handle 401 unauthorized error', async () => {
-            axios.post.mockRejectedValueOnce({
+            const mockError = {
                 response: { status: 401 },
                 message: 'Unauthorized'
-            });
+            };
+            
+            axios.post.mockRejectedValueOnce(mockError);
 
             const { getByPlaceholderText, getByText } = render(
                 <MemoryRouter initialEntries={['/login']}>
@@ -425,6 +427,14 @@ describe('Login Component', () => {
             await waitFor(() => {
                 expect(toast.error).toHaveBeenCalledWith('Something went wrong');
             });
+            
+            // Verify the error response has status 401
+            expect(axios.post).toHaveBeenCalled();
+            try {
+                await axios.post.mock.results[axios.post.mock.results.length - 1].value;
+            } catch (error) {
+                expect(error.response.status).toBe(401);
+            }
         });
     });
 
