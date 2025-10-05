@@ -30,7 +30,6 @@ const UpdateProduct = () => {
             setId(data.product._id);
             setDescription(data.product.description);
             setPrice(data.product.price);
-            setPrice(data.product.price);
             setQuantity(data.product.quantity);
             setShipping(data.product.shipping);
             setCategory(data.product.category._id);
@@ -38,12 +37,9 @@ const UpdateProduct = () => {
             console.log(error);
         }
     };
-    useEffect(() => {
-        getSingleProduct();
-        //eslint-disable-next-line
-    }, []);
-    //get all category
-    const getAllCategory = async () => {
+
+    // Get all categories
+    const getAllCategories = async () => {
         try {
             const { data } = await axios.get('/api/v1/category/get-category');
             if (data?.success) {
@@ -56,7 +52,9 @@ const UpdateProduct = () => {
     };
 
     useEffect(() => {
-        getAllCategory();
+        getAllCategories();
+        getSingleProduct();
+        //eslint-disable-next-line
     }, []);
 
     //create product function
@@ -70,19 +68,21 @@ const UpdateProduct = () => {
             productData.append('quantity', quantity);
             photo && productData.append('photo', photo);
             productData.append('category', category);
-            const { data } = axios.put(
+            productData.append('shipping', shipping);
+            const { data } = await axios.put(
                 `/api/v1/product/update-product/${id}`,
                 productData
             );
             if (data?.success) {
-                toast.error(data?.message);
-            } else {
-                toast.success('Product Updated Successfully');
+                toast.success('Product updated successfully');
                 navigate('/dashboard/admin/products');
+            } else {
+                console.log(data);
+                toast.error(data?.message);
             }
         } catch (error) {
             console.log(error);
-            toast.error('something went wrong');
+            toast.error('Something went wrong when updating product');
         }
     };
 
@@ -90,21 +90,25 @@ const UpdateProduct = () => {
     const handleDelete = async () => {
         try {
             let answer = window.prompt(
-                'Are You Sure want to delete this product ? '
+                'Are you sure you want to delete this product?'
             );
             if (!answer) return;
             const { data } = await axios.delete(
                 `/api/v1/product/delete-product/${id}`
             );
-            toast.success('Product DEleted Succfully');
-            navigate('/dashboard/admin/products');
+            if (data?.success) {
+                toast.success('Product deleted successfully');
+                navigate('/dashboard/admin/products');
+            } else {
+                toast.error(data?.message);
+            }
         } catch (error) {
             console.log(error);
-            toast.error('Something went wrong');
+            toast.error('Something went wrong when deleting product');
         }
     };
     return (
-        <Layout title={'Dashboard - Create Product'}>
+        <Layout title={'Dashboard - Update Product'}>
             <div className="container-fluid m-3 p-3">
                 <div className="row">
                     <div className="col-md-3">
@@ -132,7 +136,7 @@ const UpdateProduct = () => {
                             </Select>
                             <div className="mb-3">
                                 <label className="btn btn-outline-secondary col-md-12">
-                                    {photo ? photo.name : 'Upload Photo'}
+                                    {photo ? photo.name : 'Upload photo'}
                                     <input
                                         type="file"
                                         name="photo"
@@ -169,7 +173,7 @@ const UpdateProduct = () => {
                                 <input
                                     type="text"
                                     value={name}
-                                    placeholder="write a name"
+                                    placeholder="Enter name"
                                     className="form-control"
                                     onChange={(e) => setName(e.target.value)}
                                 />
@@ -178,7 +182,7 @@ const UpdateProduct = () => {
                                 <textarea
                                     type="text"
                                     value={description}
-                                    placeholder="write a description"
+                                    placeholder="Enter description"
                                     className="form-control"
                                     onChange={(e) =>
                                         setDescription(e.target.value)
@@ -190,7 +194,7 @@ const UpdateProduct = () => {
                                 <input
                                     type="number"
                                     value={price}
-                                    placeholder="write a Price"
+                                    placeholder="Enter price"
                                     className="form-control"
                                     onChange={(e) => setPrice(e.target.value)}
                                 />
@@ -199,7 +203,7 @@ const UpdateProduct = () => {
                                 <input
                                     type="number"
                                     value={quantity}
-                                    placeholder="write a quantity"
+                                    placeholder="Enter quantity"
                                     className="form-control"
                                     onChange={(e) =>
                                         setQuantity(e.target.value)
@@ -209,7 +213,7 @@ const UpdateProduct = () => {
                             <div className="mb-3">
                                 <Select
                                     bordered={false}
-                                    placeholder="Select Shipping "
+                                    placeholder="Select shipping"
                                     size="large"
                                     showSearch
                                     className="form-select mb-3"
