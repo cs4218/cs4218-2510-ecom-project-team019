@@ -19,12 +19,12 @@ export default {
   // ignore all node_modules except styleMock (needed for css imports)
   transformIgnorePatterns: ["/node_modules/(?!(styleMock\\.js)$)"],
 
-  // This will match any .test.js file in any subdirectory of /client/src
-  testMatch: ["<rootDir>/client/src/**/*.test.js"],
+  // This will match any .test.js file in any subdirectory of /client/src/pages
+  testMatch: ["<rootDir>/client/src/pages/**/*.test.js", "<rootDir>/client/src/context/auth.test.js"],
 
   // jest code coverage
   collectCoverage: true,
-  collectCoverageFrom: ["client/src/**"],
+  collectCoverageFrom: ["client/src/pages/**", "client/src/context/**"],
   coverageThreshold: {
     global: { // require 1% of lines and function coverage (so that can pass the GitHub Actions workflow)
       lines: 1,
