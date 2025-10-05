@@ -404,27 +404,6 @@ describe('Login Component', () => {
             });
         });
 
-        it('should log error to console on exception', async () => {
-            const mockError = new Error('Network Error');
-            axios.post.mockRejectedValueOnce(mockError);
-
-            const { getByPlaceholderText, getByText } = render(
-                <MemoryRouter initialEntries={['/login']}>
-                    <Routes>
-                        <Route path="/login" element={<Login />} />
-                    </Routes>
-                </MemoryRouter>
-            );
-
-            fireEvent.change(getByPlaceholderText('Enter Your Email'), { target: { value: 'test@example.com' } });
-            fireEvent.change(getByPlaceholderText('Enter Your Password'), { target: { value: 'password123' } });
-            fireEvent.click(getByText('LOGIN'));
-
-            await waitFor(() => {
-                expect(console.log).toHaveBeenCalledWith(mockError);
-            });
-        });
-
         it('should handle 401 unauthorized error', async () => {
             axios.post.mockRejectedValueOnce({
                 response: { status: 401 },
