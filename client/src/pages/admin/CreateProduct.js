@@ -47,18 +47,15 @@ const CreateProduct = () => {
             productData.append('photo', photo);
             productData.append('category', category);
             productData.append('shipping', shipping);
-            console.log('🧾 category during submit:', category);
-            console.log('🧾 shipping during submit:', category);
-
             const { data } = await axios.post(
                 '/api/v1/product/create-product',
                 productData
             );
             if (data?.success) {
-                toast.error(data?.message);
-            } else {
-                toast.success('Product Created Successfully');
+                toast.success('Product created successfully');
                 navigate('/dashboard/admin/products');
+            } else {
+                toast.error(data?.message);
             }
         } catch (error) {
             console.log(error);
