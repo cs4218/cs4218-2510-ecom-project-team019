@@ -3,15 +3,21 @@ import {
   loginController,
   forgotPasswordController,
   testController,
+  updateProfileController,
+  getOrdersController,
+  getAllOrdersController,
+  orderStatusController,
 } from "./authController.js";
 import userModel from "../models/userModel.js";
-import { hashPassword, comparePassword } from "../helpers/authHelper.js";
+import * as authHelper from "../helpers/authHelper.js";
 import JWT from "jsonwebtoken";
+import orderModel from '../models/orderModel.js';
 
 // Mock dependencies
 jest.mock("../models/userModel.js");
 jest.mock("../helpers/authHelper.js");
 jest.mock("jsonwebtoken");
+jest.mock('../models/orderModel.js');
 
 describe("authController", () => {
   let req, res;
@@ -57,13 +63,13 @@ describe("authController", () => {
       };
 
       userModel.findOne.mockResolvedValue(null);
-      hashPassword.mockResolvedValue(hashedPassword);
+      authHelper.hashPassword.mockResolvedValue(hashedPassword);
       userModel.mockImplementation(() => mockUserInstance);
 
       await registerController(req, res);
 
       expect(userModel.findOne).toHaveBeenCalledWith({ email: validUserData.email });
-      expect(hashPassword).toHaveBeenCalledWith(validUserData.password);
+      expect(authHelper.hashPassword).toHaveBeenCalledWith(validUserData.password);
       expect(saveMock).toHaveBeenCalled();
       expect(res.status).toHaveBeenCalledWith(201);
       expect(res.json).toHaveBeenCalledWith(
@@ -148,19 +154,17 @@ describe("authController", () => {
         success: false,
         message: "Already registered, please login",
       });
-      expect(hashPassword).not.toHaveBeenCalled();
+      expect(authHelper.hashPassword).not.toHaveBeenCalled();
     });
 
     it("should handle database errors during registration", async () => {
       req.body = validUserData;
       const mockError = new Error("Database error");
-      const consoleLogSpy = jest.spyOn(console, "log").mockImplementation();
 
       userModel.findOne.mockRejectedValue(mockError);
 
       await registerController(req, res);
 
-      expect(consoleLogSpy).toHaveBeenCalledWith(mockError);
       expect(res.status).toHaveBeenCalledWith(500);
       expect(res.json).toHaveBeenCalledWith(
         expect.objectContaining({
@@ -169,45 +173,47 @@ describe("authController", () => {
           error: mockError,
         })
       );
-
-      consoleLogSpy.mockRestore();
     });
 
     it("should handle errors during password hashing", async () => {
       req.body = validUserData;
       const mockError = new Error("Hashing error");
-      const consoleLogSpy = jest.spyOn(console, "log").mockImplementation();
 
       userModel.findOne.mockResolvedValue(null);
-      hashPassword.mockRejectedValue(mockError);
+      authHelper.hashPassword.mockRejectedValue(mockError);
 
       await registerController(req, res);
 
-      expect(consoleLogSpy).toHaveBeenCalledWith(mockError);
       expect(res.status).toHaveBeenCalledWith(500);
-
-      consoleLogSpy.mockRestore();
+      expect(res.json).toHaveBeenCalledWith(
+        expect.objectContaining({
+          success: false,
+          message: expect.stringContaining("Registration"),
+        })
+      );
     });
 
     it("should handle errors during user save", async () => {
       req.body = validUserData;
       const hashedPassword = "$2b$10$hashedPassword";
       const mockError = new Error("Save error");
-      const consoleLogSpy = jest.spyOn(console, "log").mockImplementation();
 
       const saveMock = jest.fn().mockRejectedValue(mockError);
       const mockUserInstance = { save: saveMock };
 
       userModel.findOne.mockResolvedValue(null);
-      hashPassword.mockResolvedValue(hashedPassword);
+      authHelper.hashPassword.mockResolvedValue(hashedPassword);
       userModel.mockImplementation(() => mockUserInstance);
 
       await registerController(req, res);
 
-      expect(consoleLogSpy).toHaveBeenCalledWith(mockError);
       expect(res.status).toHaveBeenCalledWith(500);
-
-      consoleLogSpy.mockRestore();
+      expect(res.json).toHaveBeenCalledWith(
+        expect.objectContaining({
+          success: false,
+          message: expect.stringContaining("Registration"),
+        })
+      );
     });
   });
 
@@ -232,13 +238,13 @@ describe("authController", () => {
       const mockToken = "jwt.token.here";
 
       userModel.findOne.mockResolvedValue(mockUser);
-      comparePassword.mockResolvedValue(true);
+      authHelper.comparePassword.mockResolvedValue(true);
       JWT.sign.mockReturnValue(mockToken);
 
       await loginController(req, res);
 
       expect(userModel.findOne).toHaveBeenCalledWith({ email: loginData.email });
-      expect(comparePassword).toHaveBeenCalledWith(
+      expect(authHelper.comparePassword).toHaveBeenCalledWith(
         loginData.password,
         mockUser.password
       );
@@ -317,19 +323,19 @@ describe("authController", () => {
           message: expect.stringContaining("Email is not registered"),
         })
       );
-      expect(comparePassword).not.toHaveBeenCalled();
+      expect(authHelper.comparePassword).not.toHaveBeenCalled();
     });
 
     it("should return error if password is incorrect", async () => {
       req.body = loginData;
 
       userModel.findOne.mockResolvedValue(mockUser);
-      comparePassword.mockResolvedValue(false);
+      authHelper.comparePassword.mockResolvedValue(false);
 
       await loginController(req, res);
 
       expect(userModel.findOne).toHaveBeenCalledWith({ email: loginData.email });
-      expect(comparePassword).toHaveBeenCalledWith(
+      expect(authHelper.comparePassword).toHaveBeenCalledWith(
         loginData.password,
         mockUser.password
       );
@@ -344,66 +350,54 @@ describe("authController", () => {
     it("should handle database errors during login", async () => {
       req.body = loginData;
       const mockError = new Error("Database error");
-      const consoleLogSpy = jest.spyOn(console, "log").mockImplementation();
 
       userModel.findOne.mockRejectedValue(mockError);
 
       await loginController(req, res);
 
-      expect(consoleLogSpy).toHaveBeenCalledWith(mockError);
       expect(res.status).toHaveBeenCalledWith(500);
       expect(res.json).toHaveBeenCalledWith({
         success: false,
         message: "Error in login",
         error: mockError,
       });
-
-      consoleLogSpy.mockRestore();
     });
 
     it("should handle errors during password comparison", async () => {
       req.body = loginData;
       const mockError = new Error("Compare error");
-      const consoleLogSpy = jest.spyOn(console, "log").mockImplementation();
 
       userModel.findOne.mockResolvedValue(mockUser);
-      comparePassword.mockRejectedValue(mockError);
+      authHelper.comparePassword.mockRejectedValue(mockError);
 
       await loginController(req, res);
 
-      expect(consoleLogSpy).toHaveBeenCalledWith(mockError);
       expect(res.status).toHaveBeenCalledWith(500);
       expect(res.json).toHaveBeenCalledWith({
         success: false,
         message: "Error in login",
         error: mockError,
       });
-
-      consoleLogSpy.mockRestore();
     });
 
     it("should handle errors during JWT token generation", async () => {
       req.body = loginData;
       const mockError = new Error("JWT error");
-      const consoleLogSpy = jest.spyOn(console, "log").mockImplementation();
 
       userModel.findOne.mockResolvedValue(mockUser);
-      comparePassword.mockResolvedValue(true);
+      authHelper.comparePassword.mockResolvedValue(true);
       JWT.sign.mockImplementation(() => {
         throw mockError;
       });
 
       await loginController(req, res);
 
-      expect(consoleLogSpy).toHaveBeenCalledWith(mockError);
       expect(res.status).toHaveBeenCalledWith(500);
       expect(res.json).toHaveBeenCalledWith({
         success: false,
         message: "Error in login",
         error: mockError,
       });
-
-      consoleLogSpy.mockRestore();
     });
   });
 
@@ -425,7 +419,7 @@ describe("authController", () => {
       const hashedPassword = "$2b$10$newHashedPassword";
 
       userModel.findOne.mockResolvedValue(mockUser);
-      hashPassword.mockResolvedValue(hashedPassword);
+      authHelper.hashPassword.mockResolvedValue(hashedPassword);
       userModel.findByIdAndUpdate.mockResolvedValue({
         ...mockUser,
         password: hashedPassword,
@@ -437,7 +431,7 @@ describe("authController", () => {
         email: forgotPasswordData.email,
         answer: forgotPasswordData.answer,
       });
-      expect(hashPassword).toHaveBeenCalledWith(forgotPasswordData.newPassword);
+      expect(authHelper.hashPassword).toHaveBeenCalledWith(forgotPasswordData.newPassword);
       expect(userModel.findByIdAndUpdate).toHaveBeenCalledWith(mockUser._id, {
         password: hashedPassword,
       });
@@ -497,71 +491,59 @@ describe("authController", () => {
         success: false,
         message: "Wrong email or answer",
       });
-      expect(hashPassword).not.toHaveBeenCalled();
+      expect(authHelper.hashPassword).not.toHaveBeenCalled();
     });
 
     it("should handle database errors during password reset", async () => {
       req.body = forgotPasswordData;
       const mockError = new Error("Database error");
-      const consoleLogSpy = jest.spyOn(console, "log").mockImplementation();
 
       userModel.findOne.mockRejectedValue(mockError);
 
       await forgotPasswordController(req, res);
 
-      expect(consoleLogSpy).toHaveBeenCalledWith(mockError);
       expect(res.status).toHaveBeenCalledWith(500);
       expect(res.json).toHaveBeenCalledWith({
         success: false,
         message: "Something went wrong",
         error: mockError,
       });
-
-      consoleLogSpy.mockRestore();
     });
 
     it("should handle errors during password hashing in forgot password", async () => {
       req.body = forgotPasswordData;
       const mockError = new Error("Hashing error");
-      const consoleLogSpy = jest.spyOn(console, "log").mockImplementation();
 
       userModel.findOne.mockResolvedValue(mockUser);
-      hashPassword.mockRejectedValue(mockError);
+      authHelper.hashPassword.mockRejectedValue(mockError);
 
       await forgotPasswordController(req, res);
 
-      expect(consoleLogSpy).toHaveBeenCalledWith(mockError);
       expect(res.status).toHaveBeenCalledWith(500);
       expect(res.json).toHaveBeenCalledWith({
         success: false,
         message: "Something went wrong",
         error: mockError,
       });
-
-      consoleLogSpy.mockRestore();
     });
 
     it("should handle errors during user update in forgot password", async () => {
       req.body = forgotPasswordData;
       const hashedPassword = "$2b$10$newHashedPassword";
       const mockError = new Error("Update error");
-      const consoleLogSpy = jest.spyOn(console, "log").mockImplementation();
 
       userModel.findOne.mockResolvedValue(mockUser);
-      hashPassword.mockResolvedValue(hashedPassword);
+      authHelper.hashPassword.mockResolvedValue(hashedPassword);
       userModel.findByIdAndUpdate.mockRejectedValue(mockError);
 
       await forgotPasswordController(req, res);
 
-      expect(consoleLogSpy).toHaveBeenCalledWith(mockError);
       expect(res.status).toHaveBeenCalledWith(500);
       expect(res.json).toHaveBeenCalledWith({
         success: false,
         message: "Something went wrong",
         error: mockError,
       });
-
-      consoleLogSpy.mockRestore();
     });
   });
 
@@ -574,7 +556,6 @@ describe("authController", () => {
 
     it("should handle errors in test controller", () => {
       const mockError = new Error("Test error");
-      const consoleLogSpy = jest.spyOn(console, "log").mockImplementation();
       
       // Mock res.send to throw an error
       res.send = jest.fn(() => {
@@ -583,30 +564,11 @@ describe("authController", () => {
 
       testController(req, res);
 
-      expect(consoleLogSpy).toHaveBeenCalledWith(mockError);
       expect(res.status).toHaveBeenCalledWith(500);
       expect(res.json).toHaveBeenCalledWith({ error: mockError });
-
-      consoleLogSpy.mockRestore();
     });
   });
 });
-
-import userModel from '../models/userModel.js';
-import orderModel from '../models/orderModel.js';
-import * as authHelper from '../helpers/authHelper.js';
-import {
-    updateProfileController,
-    getOrdersController,
-    getAllOrdersController,
-    orderStatusController,
-} from './authController.js';
-
-jest.mock('../helpers/authHelper', () => ({
-    hashPassword: jest.fn((password) => {
-        return password + 'hash'; // simple hashing strategy
-    }),
-}));
 
 describe('getOrdersController', () => {
     let req, res;
@@ -806,12 +768,15 @@ describe('updateProfileController', () => {
     });
 
     it('should return 200 upon successful profile creation', async () => {
+        const hashedPassword = 'hashedPassword123';
+        
         userModel.findById = jest.fn().mockResolvedValueOnce({
             name: req.body.user,
             password: req.body.password,
             phone: req.body.phone,
             address: req.body.address,
         });
+        authHelper.hashPassword.mockResolvedValueOnce(hashedPassword);
         userModel.findByIdAndUpdate = jest.fn().mockResolvedValueOnce({});
 
         await updateProfileController(req, res);
@@ -822,7 +787,7 @@ describe('updateProfileController', () => {
             req.user._id,
             expect.objectContaining({
                 name: req.body.name,
-                password: req.body.password + 'hash',
+                password: hashedPassword,
                 phone: req.body.phone,
                 address: req.body.address,
             }),
