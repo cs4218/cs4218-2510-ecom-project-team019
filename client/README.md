@@ -69,11 +69,4 @@ This section has moved here: [https://facebook.github.io/create-react-app/docs/d
 
 This section has moved here: [https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify](https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify)
 
-## Workload / Contribution
 
-| Contributor      | Module / Feature                                                                                                                                                                                |
-| ---------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Zacharias Wong   |                                                                                                                                                                                                 |
-| Tiong Meng Sheng | auth.js, Register.js, Login.js, authHelper.js, authMiddleware.js, authController.js (registerController, loginController, forgotPasswordController, testController)                             |
-| Wong Ja Yee      | Categories.js, CreateCategory.js, CategoryForm.js, useCategory.js, categoryController.js                                                                                                        |
-| Brendan Koh      | productController.js (all except braintreeTokenController, braintreePaymentController), CategoryProduct.js, Products.js, UpdateProduct.js, CreateProduct.js, ProductDetails.js, productModel.js |
