@@ -1,5 +1,15 @@
 # CS4218 Project - Virtual Vault
 
+## Workload / Contribution
+
+| Contributor      | Module / Feature                                                                                                                                                                                |
+| ---------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Zacharias Wong   | Order.js, authController.js (updateProfileController, getOrdersController, getAllOrdersController, orderStatusController), orderModel.js, productController.js (braintreeTokenController, brainTreePaymentController)                                                                                                                                                                                                 |
+| Tiong Meng Sheng | auth.js, Register.js, Login.js, authHelper.js, authMiddleware.js, authController.js (registerController, loginController, forgotPasswordController, testController)                             |
+| Wong Ja Yee      | Categories.js, CreateCategory.js, CategoryForm.js, useCategory.js, categoryController.js                                                                                                        |
+| Brendan Koh      | productController.js (all except braintreeTokenController, braintreePaymentController), CategoryProduct.js, Products.js, UpdateProduct.js, CreateProduct.js, ProductDetails.js, productModel.js |
+
+
 ## 1. Project Introduction
 
 Virtual Vault is a full-stack MERN (MongoDB, Express.js, React.js, Node.js) e-commerce website, offering seamless connectivity and user-friendly features. The platform provides a robust framework for online shopping. The website is designed to adapt to evolving business needs and can be efficiently extended.

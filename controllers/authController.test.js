@@ -800,7 +800,7 @@ describe('updateProfileController', () => {
     });
 
     it('should return 400 if password does not meet requirements', async () => {
-        req.body.password = '123'; // invalid length
+        req.body.password = '12345'; // invalid length
         await updateProfileController(req, res);
 
         expect(res.status).toHaveBeenCalledWith(400);
