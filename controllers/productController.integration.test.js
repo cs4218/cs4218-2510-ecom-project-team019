@@ -384,3 +384,208 @@ describe('Product Controller Integration', () => {
         expect(catProducts.length).toBe(5);
     });
 });
+
+describe('Product controller integration errors', () => {
+    it('Creation fail should not change the number of products', async () => {
+        // Setup: create a category for products
+        const category1 = await Category.create({
+            name: 'cat1',
+            slug: slugify('cat1'),
+        });
+        const category2 = await Category.create({
+            name: 'cat2',
+            slug: slugify('cat2'),
+        });
+
+        const req = {};
+        const res = {
+            status: jest.fn().mockReturnThis(),
+            json: jest.fn(),
+        };
+
+        // 1. Get products when none exist
+        await getProductController(null, res);
+        expect(res.status).toHaveBeenCalledWith(200);
+        expect(res.json).toHaveBeenCalledWith({
+            success: true,
+            length: 0,
+            message: 'All Products',
+            products: [],
+        });
+
+        // 2. Create 10 products successfully (odd indexed in category1, even in category2)
+        for (let i = 1; i <= 10; i++) {
+            const createReq = {
+                fields: {
+                    name: `Product ${i}`,
+                    description: `Description for product ${i}`,
+                    price: i * 10,
+                    category: i % 2 === 0 ? category2 : category1,
+                    quantity: i,
+                    shipping: i % 2 === 0,
+                },
+                files: {},
+            };
+            await createProductController(createReq, res);
+            expect(res.status).toHaveBeenCalledWith(201);
+        }
+
+        // 3. There should be 10 products
+        await productCountController(null, res);
+        expect(res.status).toHaveBeenCalledWith(200);
+        expect(res.json).toHaveBeenCalledWith({
+            success: true,
+            total: 10,
+            message: 'Product count fetched',
+        });
+
+        // 4. Try inserting another product with missing fields
+        const createReqFail = {
+            fields: {
+                name: `Product Fail`,
+                description: `Description for product fail`,
+                category: category2,
+                quantity: 1,
+            },
+            files: {},
+        };
+        await createProductController(createReqFail, res);
+        expect(res.status).toHaveBeenCalledWith(400);
+
+        // 5. There should still be 10 products
+        await getProductController(null, res);
+        expect(res.status).toHaveBeenCalledWith(200);
+        expect(res.json).toHaveBeenCalledWith({
+            success: true,
+            length: 10,
+            message: 'All Products',
+            products: expect.arrayContaining([
+                expect.objectContaining({ name: 'Product 1' }),
+                expect.objectContaining({ name: 'Product 10' }),
+                expect.not.objectContaining({ name: 'Product Fail' }),
+            ]),
+        });
+    });
+
+    it('Updating fail should not update the product list', async () => {
+        // Setup: create a category for products
+        const category1 = await Category.create({
+            name: 'cat1',
+            slug: slugify('cat1'),
+        });
+        const category2 = await Category.create({
+            name: 'cat2',
+            slug: slugify('cat2'),
+        });
+
+        const req = {};
+        const res = {
+            status: jest.fn().mockReturnThis(),
+            json: jest.fn(),
+        };
+
+        const consoleSpy = jest
+            .spyOn(console, 'error')
+            .mockImplementation(() => {});
+
+        // 1. Get products when none exist
+        await getProductController(null, res);
+        expect(res.status).toHaveBeenCalledWith(200);
+        expect(res.json).toHaveBeenCalledWith({
+            success: true,
+            length: 0,
+            message: 'All Products',
+            products: [],
+        });
+
+        // 2. Create 10 products successfully (odd indexed in category1, even in category2)
+        for (let i = 1; i <= 10; i++) {
+            const createReq = {
+                fields: {
+                    name: `Product ${i}`,
+                    description: `Description for product ${i}`,
+                    price: i * 10,
+                    category: i % 2 === 0 ? category2 : category1,
+                    quantity: i,
+                    shipping: i % 2 === 0,
+                },
+                files: {},
+            };
+            await createProductController(createReq, res);
+            expect(res.status).toHaveBeenCalledWith(201);
+        }
+
+        // 3. There should be 10 products
+        await productCountController(null, res);
+        expect(res.status).toHaveBeenCalledWith(200);
+        expect(res.json).toHaveBeenCalledWith({
+            success: true,
+            total: 10,
+            message: 'Product count fetched',
+        });
+
+        // 4. Try updating a product that doesn't exist
+        const updateReqFail = {
+            params: { pid: 'not-a-valid-objectid' },
+            fields: {
+                name: 'Fail updated Product',
+                description: 'Fail updated description',
+                price: 25,
+                category: category2,
+                quantity: 10,
+                shipping: false,
+            },
+            files: {},
+        };
+        await updateProductController(updateReqFail, res);
+        expect(res.status).toHaveBeenCalledWith(500);
+        expect(consoleSpy).toHaveBeenCalledWith(expect.any(Error));
+        consoleSpy.mockRestore();
+
+        // 5. There should still be 10 products
+        await getProductController(null, res);
+        expect(res.status).toHaveBeenCalledWith(200);
+        expect(res.json).toHaveBeenCalledWith({
+            success: true,
+            length: 10,
+            message: 'All Products',
+            products: expect.arrayContaining([
+                expect.objectContaining({ name: 'Product 1' }),
+                expect.objectContaining({ name: 'Product 10' }),
+                expect.not.objectContaining({ name: 'Fail updated Product' }),
+            ]),
+        });
+
+        // 6. Try updating a product that exists but fails validation
+        const product4 = await productModel.findOne({ name: 'Product 4' });
+        const updateReqFail2 = {
+            params: { pid: product4._id },
+            fields: {
+                name: 'Fail updated Product',
+                description: 'Fail updated description',
+                category: null,
+                quantity: 10,
+                shipping: false,
+            },
+            files: {},
+        };
+        await updateProductController(updateReqFail2, res);
+        expect(res.status).toHaveBeenCalledWith(400);
+
+        // 7. There should still be 10 products
+        await getProductController(null, res);
+        expect(res.status).toHaveBeenCalledWith(200);
+        expect(res.json).toHaveBeenCalledWith({
+            success: true,
+            length: 10,
+            message: 'All Products',
+            products: expect.arrayContaining([
+                expect.objectContaining({ name: 'Product 1' }),
+                expect.objectContaining({ name: 'Product 4' }),
+                expect.not.objectContaining({ name: 'Fail updated Product' }),
+            ]),
+        });
+        const p4After = await productModel.findById(product4._id);
+        expect(p4After.name).toBe('Product 4');
+    });
+});
