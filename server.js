@@ -1,10 +1,14 @@
 import express from 'express';
 import colors from 'colors';
+import connectDB from './config/db.js';
 import dotenv from 'dotenv';
 import app from './app.js';
 
 // configure env
 dotenv.config();
+
+//database config
+connectDB();
 
 const PORT = process.env.PORT || 6060;
 
