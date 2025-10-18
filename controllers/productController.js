@@ -36,7 +36,7 @@ export const createProductController = async (req, res) => {
                 return res.status(400).json({ error: 'Category is required' });
             case !quantity:
                 return res.status(400).json({ error: 'Quantity is required' });
-            case !shipping:
+            case shipping === undefined:
                 return res.status(400).json({ error: 'Shipping is required' });
             case photo && photo.size > 1000000:
                 return res.status(400).json({
@@ -181,7 +181,7 @@ export const updateProductController = async (req, res) => {
                 return res.status(400).json({ error: 'Category is required' });
             case !quantity:
                 return res.status(400).json({ error: 'Quantity is required' });
-            case !shipping:
+            case shipping === undefined:
                 return res.status(400).json({ error: 'Shipping is required' });
             case photo && photo.size > 1000000:
                 return res.status(400).json({
