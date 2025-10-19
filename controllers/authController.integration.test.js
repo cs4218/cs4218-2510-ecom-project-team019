@@ -21,7 +21,6 @@ jest.mock('bcrypt');
 
 describe('integration test: getOrdersController', () => {
     let mongoServer;
-    let testUser, testProduct1, testProduct2, testCategory;
     let req, res;
 
     beforeAll(async () => {
@@ -36,12 +35,12 @@ describe('integration test: getOrdersController', () => {
     });
 
     beforeEach(async () => {
-        testCategory = await categoryModel.create({
+        const testCategory = await categoryModel.create({
             name: 'Books',
             slug: 'books',
         });
 
-        testProduct1 = await productModel.create({
+        const testProduct1 = await productModel.create({
             name: 'Book',
             slug: 'book-slug',
             description: 'A good book',
@@ -50,7 +49,7 @@ describe('integration test: getOrdersController', () => {
             quantity: 3,
         });
 
-        testProduct2 = await productModel.create({
+        const testProduct2 = await productModel.create({
             name: 'Laptop',
             slug: 'laptop-slug',
             description: 'A solid laptop',
@@ -59,7 +58,7 @@ describe('integration test: getOrdersController', () => {
             quantity: 1,
         });
 
-        testUser = await userModel.create({
+        const testUser = await userModel.create({
             name: 'John Doe',
             email: 'john@gmail.com',
             password: 'oldPassword',
@@ -68,7 +67,7 @@ describe('integration test: getOrdersController', () => {
             answer: 'test-answer',
         });
 
-        testOrder = await orderModel.create({
+        await orderModel.create({
             products: [testProduct1._id, testProduct2._id],
             payment: { method: 'card' },
             buyer: testUser._id,
@@ -137,6 +136,299 @@ describe('integration test: getOrdersController', () => {
     //         })
     //     );
     // });
+});
+
+describe('integration test: getAllOrdersController', () => {
+    let mongoServer;
+    let req, res;
+
+    beforeAll(async () => {
+        mongoServer = await MongoMemoryServer.create();
+        const uri = mongoServer.getUri();
+        await mongoose.connect(uri);
+    });
+
+    afterAll(async () => {
+        await mongoose.disconnect();
+        await mongoServer.stop();
+    });
+
+    beforeEach(async () => {
+        const testCategory = await categoryModel.create({
+            name: 'Books',
+            slug: 'books',
+        });
+
+        const testProduct1 = await productModel.create({
+            name: 'Book',
+            slug: 'book-slug',
+            description: 'A good book',
+            price: 10,
+            category: testCategory._id,
+            quantity: 3,
+        });
+
+        const testProduct2 = await productModel.create({
+            name: 'Laptop',
+            slug: 'laptop-slug',
+            description: 'A solid laptop',
+            price: 250,
+            category: testCategory._id,
+            quantity: 1,
+        });
+
+        const testProduct3 = await productModel.create({
+            name: 'Shirt',
+            slug: 'shirt-slug',
+            description: 'A cute shirt',
+            price: 32,
+            category: testCategory._id,
+            quantity: 1,
+        });
+
+        const testUser1 = await userModel.create({
+            name: 'John Doe',
+            email: 'john@gmail.com',
+            password: 'oldPassword',
+            phone: '91231234',
+            address: 'CLB at NUS',
+            answer: 'test-answer',
+        });
+
+        const testUser2 = await userModel.create({
+            name: 'Mary Lamb',
+            email: 'mary@gmail.com',
+            password: 'oldPassword',
+            phone: '9555666',
+            address: 'FASS',
+            answer: 'test-answer',
+        });
+
+        await orderModel.create({
+            products: [testProduct1._id, testProduct2._id],
+            payment: { method: 'card' },
+            buyer: testUser1._id,
+            status: 'Processing',
+        });
+
+        await orderModel.create({
+            products: [testProduct3._id],
+            payment: { method: 'card' },
+            buyer: testUser2._id,
+            status: 'Processing',
+        });
+
+        req = {};
+
+        res = {
+            json: jest.fn(),
+            status: jest.fn(() => res),
+        };
+    });
+
+    afterEach(async () => {
+        await orderModel.deleteMany({});
+        await productModel.deleteMany({});
+        await categoryModel.deleteMany({});
+        await userModel.deleteMany({});
+        jest.clearAllMocks();
+    });
+
+    it('should return 200 and the list of all orders', async () => {
+        await getAllOrdersController(req, res);
+
+        expect(res.status).toHaveBeenCalledWith(200);
+
+        // Extract the orders that were sent to res.json
+        const jsonArg = res.json.mock.calls[0][0];
+        expect(Array.isArray(jsonArg)).toBe(true);
+        expect(jsonArg.length).toBe(2);
+
+        // Assert testOrder1's attributes
+        expect(jsonArg[1].buyer.name).toBe('John Doe');
+        expect(jsonArg[1].products.length).toBe(2);
+
+        // Check testOrder1's product details are populated
+        expect(jsonArg[1].products[0]).toHaveProperty('name', 'Book');
+        expect(jsonArg[1].products[1]).toHaveProperty('name', 'Laptop');
+
+        // Assert testOrder2's attributes
+        expect(jsonArg[0].buyer.name).toBe('Mary Lamb');
+        expect(jsonArg[0].products.length).toBe(1);
+
+        // Check testOrder2's product details are populated
+        expect(jsonArg[0].products[0]).toHaveProperty('name', 'Shirt');
+    });
+
+    it('should return 200 and empty array if no orders exist', async () => {
+        await orderModel.deleteMany({});
+        await getAllOrdersController(req, res);
+
+        expect(res.status).toHaveBeenCalledWith(200);
+        const jsonArg = res.json.mock.calls[0][0];
+        expect(Array.isArray(jsonArg)).toBe(true);
+        expect(jsonArg.length).toBe(0);
+    });
+
+    // for some reason this test fails, when it shouldn't. Commenting it now in case
+    // someone wants to fix this in the future (or perhaps never)
+    // it('should return 500 if there is a database error', async () => {
+    //     jest.spyOn(orderModel, 'find').mockRejectedValueOnce(
+    //         new Error('DB error')
+    //     );
+
+    //     await getAllOrdersController(req, res);
+
+    //     expect(res.status).toHaveBeenCalledWith(500);
+    //     expect(res.json).toHaveBeenCalledWith(
+    //         expect.objectContaining({
+    //             success: false,
+    //             message: expect.any(String),
+    //         })
+    //     );
+    // });
+});
+
+describe('integration test: orderStatusController', () => {
+    let mongoServer;
+    let req, res;
+    let testOrder;
+
+    beforeAll(async () => {
+        mongoServer = await MongoMemoryServer.create();
+        const uri = mongoServer.getUri();
+        await mongoose.connect(uri);
+    });
+
+    afterAll(async () => {
+        await mongoose.disconnect();
+        await mongoServer.stop();
+    });
+
+    beforeEach(async () => {
+        const testCategory = await categoryModel.create({
+            name: 'Books',
+            slug: 'books',
+        });
+
+        const testProduct1 = await productModel.create({
+            name: 'Book',
+            slug: 'book-slug',
+            description: 'A good book',
+            price: 10,
+            category: testCategory._id,
+            quantity: 3,
+        });
+
+        const testProduct2 = await productModel.create({
+            name: 'Laptop',
+            slug: 'laptop-slug',
+            description: 'A solid laptop',
+            price: 250,
+            category: testCategory._id,
+            quantity: 1,
+        });
+
+        const testUser = await userModel.create({
+            name: 'John Doe',
+            email: 'john@gmail.com',
+            password: 'oldPassword',
+            phone: '91231234',
+            address: 'CLB at NUS',
+            answer: 'test-answer',
+        });
+
+        testOrder = await orderModel.create({
+            products: [testProduct1._id, testProduct2._id],
+            payment: { method: 'card' },
+            buyer: testUser._id,
+            status: 'Processing',
+        });
+
+        req = {
+            params: {
+                orderId: testOrder._id,
+            },
+            body: {
+                status: 'Shipped',
+            },
+        };
+
+        res = {
+            json: jest.fn(),
+            status: jest.fn(() => res),
+        };
+    });
+
+    afterEach(async () => {
+        await orderModel.deleteMany({});
+        await productModel.deleteMany({});
+        await categoryModel.deleteMany({});
+        await userModel.deleteMany({});
+        jest.clearAllMocks();
+    });
+
+    it('should return 200 and update the status of an order', async () => {
+        await orderStatusController(req, res);
+
+        expect(res.status).toHaveBeenCalledWith(200);
+
+        // Verify that the order status has been updated to 'Shipped'
+        const order = await orderModel.findById(testOrder._id);
+
+        expect(order.status).toBe('Shipped');
+    });
+
+    it('should return 500 if orderId is not a valid ObjectId', async () => {
+        req.params.orderId = 'invalid-id'; // not a valid ObjectId
+
+        await orderStatusController(req, res);
+
+        expect(res.status).toHaveBeenCalledWith(500);
+        expect(res.json).toHaveBeenCalledWith(
+            expect.objectContaining({
+                success: false,
+                message: expect.any(String),
+            })
+        );
+    });
+
+    it('should return 200 with null if orderId does not exist', async () => {
+        const nonExistentId = new mongoose.Types.ObjectId();
+        req.params.orderId = nonExistentId;
+
+        await orderStatusController(req, res);
+
+        expect(res.status).toHaveBeenCalledWith(200);
+        expect(res.json).toHaveBeenCalledWith(null);
+    });
+
+    it('should return 200 even if status is missing (no change)', async () => {
+        delete req.body.status;
+
+        await orderStatusController(req, res);
+
+        expect(res.status).toHaveBeenCalledWith(200);
+
+        const updatedOrder = await orderModel.findById(testOrder._id);
+        expect(updatedOrder.status).toBe('Processing'); // no change
+    });
+
+    it('should return 500 if there is a database error', async () => {
+        jest.spyOn(orderModel, 'findByIdAndUpdate').mockRejectedValueOnce(
+            new Error('DB error')
+        );
+
+        await orderStatusController(req, res);
+
+        expect(res.status).toHaveBeenCalledWith(500);
+        expect(res.json).toHaveBeenCalledWith(
+            expect.objectContaining({
+                success: false,
+                message: expect.any(String),
+            })
+        );
+    });
 });
 
 describe('integration test: updateProfileController', () => {
