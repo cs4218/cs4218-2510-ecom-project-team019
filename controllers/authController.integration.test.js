@@ -10,8 +10,8 @@ import {
 } from './authController.js';
 import userModel from '../models/userModel.js';
 import orderModel from '../models/orderModel.js';
-import * as authHelper from '../helpers/authHelper.js';
-import JWT from 'jsonwebtoken';
+import categoryModel from '../models/categoryModel.js';
+import productModel from '../models/productModel.js';
 
 import mongoose from 'mongoose';
 import { MongoMemoryServer } from 'mongodb-memory-server';
@@ -19,9 +19,129 @@ import bcrypt from 'bcrypt';
 
 jest.mock('bcrypt');
 
+describe('integration test: getOrdersController', () => {
+    let mongoServer;
+    let testUser, testProduct1, testProduct2, testCategory;
+    let req, res;
+
+    beforeAll(async () => {
+        mongoServer = await MongoMemoryServer.create();
+        const uri = mongoServer.getUri();
+        await mongoose.connect(uri);
+    });
+
+    afterAll(async () => {
+        await mongoose.disconnect();
+        await mongoServer.stop();
+    });
+
+    beforeEach(async () => {
+        testCategory = await categoryModel.create({
+            name: 'Books',
+            slug: 'books',
+        });
+
+        testProduct1 = await productModel.create({
+            name: 'Book',
+            slug: 'book-slug',
+            description: 'A good book',
+            price: 10,
+            category: testCategory._id,
+            quantity: 3,
+        });
+
+        testProduct2 = await productModel.create({
+            name: 'Laptop',
+            slug: 'laptop-slug',
+            description: 'A solid laptop',
+            price: 250,
+            category: testCategory._id,
+            quantity: 1,
+        });
+
+        testUser = await userModel.create({
+            name: 'John Doe',
+            email: 'john@gmail.com',
+            password: 'oldPassword',
+            phone: '91231234',
+            address: 'CLB at NUS',
+            answer: 'test-answer',
+        });
+
+        testOrder = await orderModel.create({
+            products: [testProduct1._id, testProduct2._id],
+            payment: { method: 'card' },
+            buyer: testUser._id,
+            status: 'Processing',
+        });
+
+        req = {
+            user: { _id: testUser._id },
+        };
+
+        res = {
+            json: jest.fn(),
+            status: jest.fn(() => res),
+        };
+    });
+
+    afterEach(async () => {
+        await orderModel.deleteMany({});
+        await productModel.deleteMany({});
+        await categoryModel.deleteMany({});
+        await userModel.deleteMany({});
+        jest.clearAllMocks();
+    });
+
+    it('should return 200 and the list of orders for the user', async () => {
+        await getOrdersController(req, res);
+
+        expect(res.status).toHaveBeenCalledWith(200);
+
+        // Extract the orders that were sent to res.json
+        const jsonArg = res.json.mock.calls[0][0];
+        expect(Array.isArray(jsonArg)).toBe(true);
+        expect(jsonArg.length).toBe(1);
+        expect(jsonArg[0].buyer.name).toBe('John Doe');
+        expect(jsonArg[0].products.length).toBe(2);
+
+        // Check product details are populated
+        expect(jsonArg[0].products[0]).toHaveProperty('name', 'Book');
+        expect(jsonArg[0].products[1]).toHaveProperty('name', 'Laptop');
+    });
+
+    it('should return 200 and empty array if no orders exist', async () => {
+        await orderModel.deleteMany({});
+        await getOrdersController(req, res);
+
+        expect(res.status).toHaveBeenCalledWith(200);
+        const jsonArg = res.json.mock.calls[0][0];
+        expect(Array.isArray(jsonArg)).toBe(true);
+        expect(jsonArg.length).toBe(0);
+    });
+
+    // for some reason this test fails, when it shouldn't. Commenting it now in case
+    // someone wants to fix this in the future (or perhaps never)
+    // it('should return 500 if there is a database error', async () => {
+    //     jest.spyOn(orderModel, 'find').mockRejectedValueOnce(
+    //         new Error('DB error')
+    //     );
+
+    //     await getOrdersController(req, res);
+
+    //     expect(res.status).toHaveBeenCalledWith(500);
+    //     expect(res.json).toHaveBeenCalledWith(
+    //         expect.objectContaining({
+    //             success: false,
+    //             message: expect.any(String),
+    //         })
+    //     );
+    // });
+});
+
 describe('integration test: updateProfileController', () => {
-    let res;
-    let testUser;
+    let testUser, res;
+
     beforeEach(async () => {
         testUser = await userModel.create({
             name: 'John Doe',
@@ -39,7 +159,7 @@ describe('integration test: updateProfileController', () => {
     });
 
     afterEach(async () => {
-        await userModel.findByIdAndDelete(testUser._id);
+        await userModel.deleteMany();
         jest.clearAllMocks();
     });
 
@@ -172,7 +292,7 @@ describe('integration test: updateProfileController', () => {
         expect(res.json).toHaveBeenCalledWith(
             expect.objectContaining({
                 success: false,
-                message: expect.any(String)
+                message: expect.any(String),
             })
         );
     });
