@@ -24,7 +24,12 @@ export const requireSignIn = async (req, res, next) => {
 export const isAdmin = async (req, res, next) => {
     try {
         const user = await userModel.findById(req.user._id);
-        if (user.role !== 1) {
+        if (user.role === 0) {
+            return res.status(403).json({
+                success: false,
+                message: 'Forbidden - Admins only',
+            });
+        } else if (user.role !== 1) {
             return res.status(401).json({
                 success: false,
                 message: 'Unauthorized access',

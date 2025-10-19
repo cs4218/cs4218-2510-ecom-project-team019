@@ -200,7 +200,7 @@ export const updateProductController = async (req, res) => {
             products.photo.contentType = photo.type;
         }
         await products.save();
-        res.status(201).json({
+        res.status(200).json({
             success: true,
             message: 'Product updated successfully',
             products,
