@@ -84,11 +84,13 @@ const CreateCategory = () => {
         toast.success(`Category is deleted`);
 
         getAllCategory();
-      } else {
-        toast.error(data.message);
       }
     } catch (error) {
-      toast.error("Something went wrong");
+      if (error.response) {
+        toast.error(error.response.data.message);
+      } else {
+        toast.error("Something went wrong");
+      }
     }
   };
   return (

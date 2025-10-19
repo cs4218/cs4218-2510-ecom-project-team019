@@ -203,12 +203,23 @@ describe('Category Controller', () => {
     describe('deleteCategoryController', () => {
         it('should delete a category and return 200', async () => {
             req.params.id = '1';
-            categoryModel.findByIdAndDelete.mockResolvedValue({});
+            categoryModel.findByIdAndDelete.mockResolvedValue({ _id: '1' }); // Return a truthy value
             await deleteCategoryController(req, res);
             expect(res.status).toHaveBeenCalledWith(200);
             expect(res.send).toHaveBeenCalledWith({
                 success: true,
                 message: 'Category Deleted Successfully',
+            });
+        });
+
+        it('should return 404 if category to delete does not exist', async () => {
+            req.params.id = 'non-existent-id';
+            categoryModel.findByIdAndDelete.mockResolvedValue(null);
+            await deleteCategoryController(req, res);
+            expect(res.status).toHaveBeenCalledWith(404);
+            expect(res.send).toHaveBeenCalledWith({
+                success: false,
+                message: 'Category not found',
             });
         });
 

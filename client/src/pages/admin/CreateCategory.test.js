@@ -1,3 +1,4 @@
+/* eslint-disable testing-library/no-wait-for-multiple-assertions */
 import React from 'react';
 import { render, screen, fireEvent, waitFor, within } from '@testing-library/react';
 import axios from 'axios';
@@ -405,8 +406,8 @@ describe('CreateCategory Page - Delete Functionality', () => {
         axios.get.mockResolvedValueOnce({
             data: { success: true, category: initialCategories },
         });
-        axios.delete.mockResolvedValueOnce({
-            data: { success: false, message: errorMessage },
+        axios.delete.mockRejectedValueOnce({ // Corrected from mockResolvedValueOnce
+            response: { data: { message: errorMessage } },
         });
 
         render(<CreateCategory />);
@@ -417,6 +418,31 @@ describe('CreateCategory Page - Delete Functionality', () => {
         await waitFor(() => {
             expect(axios.delete).toHaveBeenCalledTimes(1);
         });
+        expect(toast.error).toHaveBeenCalledWith(errorMessage);
+        expect(axios.get).toHaveBeenCalledTimes(1); // No refresh
+    });
+
+    it('should show a "not found" error toast if trying to delete a category that does not exist', async () => {
+        const errorMessage = 'Category not found';
+        axios.get.mockResolvedValueOnce({
+            data: { success: true, category: initialCategories },
+        });
+        axios.delete.mockRejectedValueOnce({
+            response: { status: 404, data: { message: errorMessage } },
+        });
+
+        render(<CreateCategory />);
+        await screen.findByText('Electronics');
+
+        // Click delete button for the first category
+        fireEvent.click(screen.getAllByRole('button', { name: /delete/i })[0]);
+
+        await waitFor(() => {
+            expect(axios.delete).toHaveBeenCalledWith(
+                `/api/v1/category/delete-category/${categoryToDelete._id}`
+            );
+        });
+
         expect(toast.error).toHaveBeenCalledWith(errorMessage);
         expect(axios.get).toHaveBeenCalledTimes(1); // No refresh
     });
