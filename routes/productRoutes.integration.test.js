@@ -6,6 +6,9 @@ import JWT from 'jsonwebtoken';
 import userModel from '../models/userModel.js';
 import categoryModel from '../models/categoryModel.js';
 import slugify from 'slugify';
+import dotenv from 'dotenv';
+
+dotenv.config();
 
 jest.mock('braintree', () => {
     const mockGateway = {
