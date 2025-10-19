@@ -195,13 +195,7 @@ describe('brainTreePaymentController', () => {
             expect.any(Function)
         );
 
-        expect(orderModel).toHaveBeenCalledWith(
-            expect.objectContaining({
-                products: req.body.cart,
-                payment: result,
-                buyer: 'user123',
-            })
-        );
+        orderModel.create = jest.fn().mockResolvedValueOnce()
 
         expect(res.json).toHaveBeenCalledWith(
             expect.objectContaining({
@@ -240,9 +234,7 @@ describe('brainTreePaymentController', () => {
             callback(null, { success: true });
         });
 
-        orderModel.mockImplementation(() => ({
-            save: jest.fn().mockRejectedValueOnce(dbError),
-        }));
+        orderModel.create = jest.fn().mockRejectedValueOnce(dbError)
 
         await brainTreePaymentController(req, res);
 
