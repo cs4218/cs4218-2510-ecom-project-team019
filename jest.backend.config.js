@@ -17,7 +17,8 @@ export default {
   collectCoverageFrom: [
     "controllers/**",
     "helpers/**",
-    "middlewares/**"
+    "middlewares/**",
+    "models/**"
   ],
   coverageThreshold: {
     global: { // require 1% of lines and function coverage (so that can pass the GitHub Actions workflow)
