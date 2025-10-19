@@ -9,6 +9,7 @@ import slugify from 'slugify';
 import dotenv from 'dotenv';
 
 dotenv.config();
+process.env.JWT_SECRET ||= 'testsecret';
 
 jest.mock('braintree', () => {
     const mockGateway = {
