@@ -90,7 +90,7 @@ test('should handle duplicate category editing', async () => {
   await page.getByRole('button', { name: 'Close' }).click();
   await expect(page.getByRole('cell', { name: 'test category 2' })).toBeVisible();
   await expect(page.getByRole('cell', { name: 'test category 1' })).toBeVisible();
-  await page.getByRole('button', { name: 'Delete' }).nth(3).click();
+  await page.getByRole('button', { name: 'Delete' }).nth(4).click();
   await page.getByRole('button', { name: 'Delete' }).nth(3).click();
 });
 
