@@ -1,10 +1,11 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useContext, createContext } from "react";
 import axios from "axios";
 
-export default function useCategory() {
+const CategoryContext = createContext();
+
+const CategoryProvider = ({ children }) => {
   const [categories, setCategories] = useState([]);
 
-  //get cat
   const getCategories = async () => {
     try {
       const { data } = await axios.get("/api/v1/category/get-category");
@@ -18,5 +19,19 @@ export default function useCategory() {
     getCategories();
   }, []);
 
-  return categories;
+  return (
+    <CategoryContext.Provider value={[categories, getCategories]}>
+        {children}
+    </CategoryContext.Provider>
+  )
+};
+
+const useCategory = () => {
+    const context = useContext(CategoryContext);
+    if (context === undefined) {
+        throw new Error('useCategory must be used within a CategoryProvider');
+    }
+    return context;
 }
+
+export { CategoryProvider, useCategory };
