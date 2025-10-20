@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Checkbox, Radio } from 'antd';
+import { Checkbox } from 'antd';
 import { Prices } from '../components/Prices';
 import { useCart } from '../context/cart';
 import axios from 'axios';
@@ -41,59 +41,64 @@ const HomePage = () => {
         setFilteredProducts(filtered);
     }, [filteredCategories, filteredPrices, products]);
 
-    useEffect(async () => {
-        const getAllCategories = async () => {
-            try {
-                const { data } = await axios.get('/api/v1/category/get-category');
-                if (data?.success) {
-                    setCategories(data?.category);
+    useEffect(() => {
+        async function fetchData() {
+            const getAllCategories = async () => {
+                try {
+                    const { data } = await axios.get('/api/v1/category/get-category');
+                    if (data?.success) {
+                        setCategories(data?.category);
+                    }
+                } catch (error) {
+                    console.log(error);
                 }
-            } catch (error) {
-                console.log(error);
-            }
-        };
+            };
 
-        const getAllProducts = async () => {
-            try {
-                setLoading(true);
-                const { data } = await axios.get(`/api/v1/product/product-list/${page}`);
-                setLoading(false);
-                setProducts(data.products);
-            } catch (error) {
-                setLoading(false);
-                console.log(error);
-            }
-        };
+            const getAllProducts = async () => {
+                try {
+                    setLoading(true);
+                    const { data } = await axios.get(`/api/v1/product/product-list/${page}`);
+                    setLoading(false);
+                    setProducts(data.products);
+                } catch (error) {
+                    setLoading(false);
+                    console.log(error);
+                }
+            };
 
-        const getTotal = async () => {
-            try {
-                const { data } = await axios.get('/api/v1/product/product-count');
-                setTotal(data?.total);
-            } catch (error) {
-                console.log(error);
-            }
-        };
+            const getTotal = async () => {
+                try {
+                    const { data } = await axios.get('/api/v1/product/product-count');
+                    setTotal(data?.total);
+                } catch (error) {
+                    console.log(error);
+                }
+            };
 
-        await getAllCategories();
-        await getAllProducts();
-        await getTotal();
+            await getAllCategories();
+            await getAllProducts();
+            await getTotal();
+        }
+
+        fetchData();
     }, []);
 
-    useEffect(async () => {
+    useEffect(() => {
         if (page === 1) return;
-        const loadMore = async () => {
+
+        async function loadMore() {
             try {
                 setLoading(true);
                 const { data } = await axios.get(`/api/v1/product/product-list/${page}`);
                 setLoading(false);
-                setProducts([...products, ...data?.products]);
+                setProducts((prev) => [...prev, ...data?.products]);
             } catch (error) {
                 console.log(error);
                 setLoading(false);
             }
-        };
+        }
 
-        await loadMore();
+        loadMore();
     }, [page]);
 
     // filter by categories
