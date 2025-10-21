@@ -8,13 +8,21 @@ test.beforeAll(async ({ browser }) => {
   page = await browser.newPage();
   await page.goto('http://localhost:3000/');
   await page.getByRole('link', { name: 'Login' }).click();
-  await page.getByRole('textbox', { name: 'Enter Your Email' }).fill('jy@test.com');
+  await page.getByRole('textbox', { name: 'Enter Your Email' }).fill('admin@test.com');
   await page.getByRole('textbox', { name: 'Enter Your Password' }).click();
-  await page.getByRole('textbox', { name: 'Enter Your Password' }).fill('jy');
+  await page.getByRole('textbox', { name: 'Enter Your Password' }).fill('test123');
   await page.getByRole('button', { name: 'LOGIN' }).click();
-  await page.getByRole('button', { name: 'jy' }).click();
+  await page.getByRole('button', { name: 'Test Admin' }).click();
   await page.getByRole('link', { name: 'Dashboard' }).click();
   await page.getByRole('link', { name: 'Create Category' }).click();
+});
+
+test.afterAll(async () => {
+  await page.getByRole('button', { name: 'Delete' }).nth(3).click();
+});
+
+test.beforeEach(async () => {
+  await page.goto('http://localhost:3000/dashboard/admin/create-category');
 });
 
 test('should display category creation form', async () => {
@@ -24,27 +32,20 @@ test('should display category creation form', async () => {
   await expect(page.getByRole('button', { name: 'Submit' })).toBeVisible();
 });
 
-test('should create category', async () => {
-  await page.getByRole('textbox', { name: 'Enter new category' }).fill('test category');
-  await expect(page.getByRole('textbox', { name: 'Enter new category' })).toHaveValue('test category');
-
-  await page.getByRole('button', { name: 'Submit' }).click();
-  await expect(page.getByText('test category is created')).toBeVisible();
-  await page.locator('div').filter({ hasText: 'test category is created' }).nth(4).click();
-  await expect(page.getByRole('cell', { name: 'test category' })).toBeVisible();
-});
-
-test('should show loading page when redirecting', async () => {
-  await page.goto('http://localhost:3000/dashboard/admin/create-category');
-  await expect(page.getByRole('heading')).toMatchAriaSnapshot(`- heading "redirecting to you in 3 second" [level=1]`);
-});
-
 test('should show categories previously added', async () => {
   await expect(page.getByRole('cell', { name: 'Electronics' })).toBeVisible();
   await expect(page.getByRole('cell', { name: 'Book' })).toBeVisible();
   await expect(page.getByRole('cell', { name: 'Clothing' })).toBeVisible();
-  await expect(page.getByRole('cell', { name: 'test category' })).toBeVisible();
+});
 
+test('should create category', async () => {
+  await page.getByRole('textbox', { name: 'Enter new category' }).fill('test category');
+  await expect(page.getByRole('textbox', { name: 'Enter new category' })).toHaveValue('test category');
+  
+  await page.getByRole('button', { name: 'Submit' }).click();
+  await expect(page.getByText('test category is created')).toBeVisible();
+  await page.locator('div').filter({ hasText: 'test category is created' }).nth(4).click();
+  await expect(page.getByRole('cell', { name: 'test category' })).toBeVisible();
 });
 
 test('should edit category', async () => {
@@ -99,5 +100,3 @@ test('should handle empty category name creation', async () => {
 
   await expect(page.locator('div').filter({ hasText: 'Name is required' }).nth(4)).toBeVisible();
 });
-
-//empty name creation

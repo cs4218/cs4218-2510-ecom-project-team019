@@ -8,10 +8,14 @@ test.beforeAll(async ({ browser }) => {
   page = await browser.newPage();
   await page.goto('http://localhost:3000/');
   await page.getByRole('link', { name: 'Login' }).click();
-  await page.getByRole('textbox', { name: 'Enter Your Email' }).fill('jy@test.com');
+  await page.getByRole('textbox', { name: 'Enter Your Email' }).fill('admin@test.com');
   await page.getByRole('textbox', { name: 'Enter Your Password' }).click();
-  await page.getByRole('textbox', { name: 'Enter Your Password' }).fill('jy');
+  await page.getByRole('textbox', { name: 'Enter Your Password' }).fill('test123');
   await page.getByRole('button', { name: 'LOGIN' }).click();
+});
+
+test.beforeEach(async () => {
+  await page.goto('http://localhost:3000/categories');
 });
 
 test('should have a category page', async () => {
@@ -23,7 +27,12 @@ test('should have a category page', async () => {
 });
 
 test('should see newly created categories in all categories page and dropdown', async () => {
-  await page.getByRole('button', { name: 'jy' }).click();
+  await page.getByRole('link', { name: 'Login' }).click();
+  await page.getByRole('textbox', { name: 'Enter Your Email' }).fill('admin@test.com');
+  await page.getByRole('textbox', { name: 'Enter Your Password' }).click();
+  await page.getByRole('textbox', { name: 'Enter Your Password' }).fill('test123');
+  await page.getByRole('button', { name: 'LOGIN' }).click();
+  await page.getByRole('button', { name: 'Test Admin' }).click();
   await page.getByRole('link', { name: 'Dashboard' }).click();
   await page.getByRole('link', { name: 'Create Category' }).click();
   await page.getByRole('textbox', { name: 'Enter new category' }).fill('test category');
@@ -38,7 +47,7 @@ test('should see newly created categories in all categories page and dropdown', 
 });
 
 test('should delete the newly created category from all categories page and dropdown', async () => {
-  await page.getByRole('button', { name: 'jy' }).click();
+  await page.getByRole('button', { name: 'Test Admin' }).click();
   await page.getByRole('link', { name: 'Dashboard' }).click();
   await page.getByRole('link', { name: 'Create Category' }).click();
   await page.getByRole('button', { name: 'Delete' }).nth(3).click();
