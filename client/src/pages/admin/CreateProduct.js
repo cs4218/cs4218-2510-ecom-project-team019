@@ -59,6 +59,17 @@ const CreateProduct = () => {
             }
         } catch (error) {
             console.log(error);
+
+            if (error.response) {
+                const backendMessage =
+                    error.response.data?.message || error.response.data?.error;
+
+                if (backendMessage) {
+                    toast.error(backendMessage);
+                    return;
+                }
+            }
+
             toast.error('Something went wrong when creating products');
         }
     };

@@ -67,9 +67,9 @@ describe('ProductDetails component', () => {
         );
 
         await waitFor(() =>
-            expect(screen.getByText('Name : Test Product')).toBeInTheDocument()
+            expect(screen.getByText('Name: Test Product')).toBeInTheDocument()
         );
-        expect(screen.getByText('Category : Category A')).toBeInTheDocument();
+        expect(screen.getByText('Category: Category A')).toBeInTheDocument();
     });
 
     it('renders related products', async () => {
