@@ -118,10 +118,10 @@ describe("isAdmin integration", () => {
     await isAdmin(req, res, next);
 
     expect(next).not.toHaveBeenCalled();
-    expect(res.status).toHaveBeenCalledWith(401);
+    expect(res.status).toHaveBeenCalledWith(403);
     const responseBody = res.json.mock.calls[0][0];
     expect(responseBody.success).toBe(false);
-    expect(responseBody.message).toBe("Unauthorized access");
+    expect(responseBody.message).toBe("Forbidden - Admins only");
   });
 
   it("should return 500 when user lookup fails", async () => {
