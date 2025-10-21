@@ -24,12 +24,16 @@ jobs:
               run: npx playwright install --with-deps
 
             - name: Start app
-              run: npm run playwright-dev &
+              run: nohup npm run playwright-ci > server.log 2>&1 &
               env:
                   CI: true
 
             - name: Wait for app to start
-              run: npx wait-on http://localhost:3000
+              run: npx wait-on --timeout 60000 http://localhost:3000
+
+            - name: Print server logs if startup fails
+              if: failure()
+              run: cat server.log
 
             # Run Playwright tests after server is ready
             - name: Run Playwright tests
