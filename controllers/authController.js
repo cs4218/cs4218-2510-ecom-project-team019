@@ -215,12 +215,12 @@ export const orderStatusController = async (req, res) => {
   try {
     const { orderId } = req.params;
     const { status } = req.body;
-    const orders = await orderModel.findByIdAndUpdate(
+    const updatedOrder = await orderModel.findByIdAndUpdate(
       orderId,
       { status },
       { new: true }
     );
-    res.status(200).json(orders);
+    res.status(200).json(updatedOrder);
   } catch (error) {
     res.status(500).json({
       success: false,
