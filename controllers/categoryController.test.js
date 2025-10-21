@@ -247,6 +247,7 @@ describe('Category Controller', () => {
 
         it('should return 404 if category to delete does not exist', async () => {
             req.params.id = 'non-existent-id';
+            productModel.find.mockResolvedValue([]);
             categoryModel.findByIdAndDelete.mockResolvedValue(null);
             await deleteCategoryController(req, res);
             expect(res.status).toHaveBeenCalledWith(404);
