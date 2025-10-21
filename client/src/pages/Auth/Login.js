@@ -9,6 +9,7 @@ import { useAuth } from "../../context/auth";
 const Login = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [loading, setLoading] = useState(false);
   const [auth, setAuth] = useAuth();
   
   const navigate = useNavigate();
@@ -17,9 +18,14 @@ const Login = () => {
   // form function
   const handleSubmit = async (e) => {
     e.preventDefault();
+    
+    // Prevent double submission
+    if (loading) return;
+    
+    setLoading(true);
     try {
       const res = await axios.post("/api/v1/auth/login", {
-        email,
+        email: email.trim(),
         password,
       });
       if (res && res.data.success) {
@@ -40,9 +46,11 @@ const Login = () => {
         navigate(location.state || "/");
       } else {
         toast.error(res.data.message);
+        setLoading(false);
       }
     } catch (error) {
       toast.error("Something went wrong");
+      setLoading(false);
     }
   };
   return (
@@ -84,8 +92,8 @@ const Login = () => {
               Forgot Password
             </button>
           </div>
-          <button type="submit" className="btn btn-primary">
-            LOGIN
+          <button type="submit" className="btn btn-primary" disabled={loading}>
+            {loading ? "LOGGING IN..." : "LOGIN"}
           </button>
         </form>
       </div>
