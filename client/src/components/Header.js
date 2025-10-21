@@ -3,14 +3,14 @@ import { NavLink, Link } from "react-router-dom";
 import { useAuth } from "../context/auth";
 import toast from "react-hot-toast";
 import SearchInput from "./Form/SearchInput";
-import useCategory from "../hooks/useCategory";
+import { useCategory } from "../hooks/useCategory";
 import { useCart } from "../context/cart";
 import { Badge } from "antd";
 import "../styles/Header.css";
 const Header = () => {
   const [auth, setAuth] = useAuth();
   const [cart] = useCart();
-  const categories = useCategory();
+  const [categories] = useCategory();
   const handleLogout = () => {
     setAuth({
       ...auth,
@@ -61,7 +61,7 @@ const Header = () => {
                     </Link>
                   </li>
                   {categories?.map((c) => (
-                    <li>
+                    <li key={c._id}>
                       <Link
                         className="dropdown-item"
                         to={`/category/${c.slug}`}

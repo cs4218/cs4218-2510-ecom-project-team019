@@ -1,6 +1,9 @@
+import { MongoMemoryServer } from 'mongodb-memory-server';
 import mongoose from 'mongoose';
-import { MongoMemoryServer } from 'mongodb-memory-server'; // (an in-memory MongoDB) so that can test schema without touching a real DB
+import orderModel from '../models/orderModel';
 import {
+    gateway,
+    brainTreePaymentController,
     getProductController,
     createProductController,
     getSingleProductController,
@@ -56,6 +59,107 @@ afterAll(async () => {
     await mongoServer.stop();
 });
 
+describe('integration test: brainTreePaymentController', () => {
+    let req, res;
+
+    beforeEach(() => {
+        req = {
+            body: {
+                nonce: 'nonce',
+                cart: [{ price: 10 }, { price: 20 }],
+            },
+            user: {
+                _id: new mongoose.Types.ObjectId(),
+            },
+        };
+
+        res = {
+            status: jest.fn(() => res),
+            json: jest.fn(),
+        };
+    });
+
+    afterEach(async () => {
+        await orderModel.deleteMany({});
+        jest.clearAllMocks();
+    });
+
+    it('should return ok=true when transaction is successful', async () => {
+        const result = {
+            success: true,
+        };
+
+        gateway.transaction.sale = jest.fn((data, callback) => {
+            callback(null, result);
+        });
+
+        await brainTreePaymentController(req, res);
+
+        // Verify that an Order has been created and saved into DB
+        const newOrder = await orderModel.findOne({ buyer: req.user._id });
+        expect(newOrder).toBeTruthy();
+        expect(newOrder.products).toHaveLength(2);
+        expect(newOrder.payment).toEqual(result);
+
+        expect(gateway.transaction.sale).toHaveBeenCalledWith(
+            expect.objectContaining({
+                amount: '30.00',
+                paymentMethodNonce: req.body.nonce,
+            }),
+            expect.any(Function)
+        );
+
+        expect(res.status).toHaveBeenCalledWith(200);
+
+        expect(res.json).toHaveBeenCalledWith(
+            expect.objectContaining({
+                ok: true,
+            })
+        );
+    });
+
+    it('should return 500 if transaction fails', async () => {
+        gateway.transaction.sale = jest.fn((data, callback) => {
+            callback(null, { success: false, message: 'Payment failed' });
+        });
+
+        await brainTreePaymentController(req, res);
+
+        expect(res.status).toHaveBeenCalledWith(500);
+        expect(res.json).toHaveBeenCalledWith(expect.objectContaining({ ok: false }));
+    });
+
+    it('should return 500 if dbError is thrown when saving order', async () => {
+        const dbError = new Error('Database save failed');
+        gateway.transaction.sale = jest.fn((data, callback) => {
+            callback(null, { success: true });
+        });
+
+        jest.spyOn(orderModel, 'create').mockRejectedValueOnce(dbError);
+
+        await brainTreePaymentController(req, res);
+
+        expect(res.status).toHaveBeenCalledWith(500);
+        expect(res.json).toHaveBeenCalledWith(expect.objectContaining({ ok: false }));
+    });
+
+    it('should return 500 if the payment gateway throws an error', async () => {
+        gateway.transaction.sale = jest.fn((data, callback) => {
+            callback(new Error('Gateway timeout'));
+        });
+
+        await brainTreePaymentController(req, res);
+
+        expect(res.status).toHaveBeenCalledWith(500);
+        expect(res.json).toHaveBeenCalledWith(
+            expect.objectContaining({
+                ok: false,
+                error: 'Gateway timeout',
+            })
+        );
+    });
+});
+
 // ProductController integration tests
 describe('Product Controller Integration', () => {
     // Tests the createProductController, getProductController, getSingleProductController,
@@ -102,8 +206,7 @@ describe('Product Controller Integration', () => {
 
         await createProductController(createReq1, res);
         expect(res.status).toHaveBeenCalledWith(201);
-        const createdProduct =
-            res.json.mock.calls[res.json.mock.calls.length - 1][0].products;
+        const createdProduct = res.json.mock.calls[res.json.mock.calls.length - 1][0].products;
         expect(createdProduct).toMatchObject({
             name: 'Test Product',
             description: 'A product for testing',
@@ -120,9 +223,7 @@ describe('Product Controller Integration', () => {
             success: true,
             length: 1,
             message: 'All Products',
-            products: expect.arrayContaining([
-                expect.objectContaining({ name: 'Test Product' }),
-            ]),
+            products: expect.arrayContaining([expect.objectContaining({ name: 'Test Product' })]),
         });
 
         // 4. Create another product
@@ -139,8 +240,7 @@ describe('Product Controller Integration', () => {
         };
         await createProductController(createReq2, res);
         expect(res.status).toHaveBeenCalledWith(201);
-        const secondProduct =
-            res.json.mock.calls[res.json.mock.calls.length - 1][0].products;
+        const secondProduct = res.json.mock.calls[res.json.mock.calls.length - 1][0].products;
         expect(secondProduct).toMatchObject({
             name: 'Second Product',
             description: 'Another product for testing',
@@ -325,10 +425,7 @@ describe('Product Controller Integration', () => {
             products: expect.any(Array),
         });
         // Should return 4 products on page 2
-        expect(
-            res.json.mock.calls[res.json.mock.calls.length - 1][0].products
-                .length
-        ).toBe(4);
+        expect(res.json.mock.calls[res.json.mock.calls.length - 1][0].products.length).toBe(4);
 
         // 8. Search products with keyword "Product 1"
         const searchReq = { params: { keyword: 'Product 1' } };
@@ -353,8 +450,7 @@ describe('Product Controller Integration', () => {
             ]),
         });
         // Should not include the original product
-        const relatedProducts =
-            res.json.mock.calls[res.json.mock.calls.length - 1][0].products;
+        const relatedProducts = res.json.mock.calls[res.json.mock.calls.length - 1][0].products;
         relatedProducts.forEach((p) => {
             expect(p._id.toString()).not.toBe(prod1._id.toString());
         });
@@ -375,8 +471,7 @@ describe('Product Controller Integration', () => {
             ]),
         });
         // All returned products should belong to category1
-        const catProducts =
-            res.json.mock.calls[res.json.mock.calls.length - 1][0].products;
+        const catProducts = res.json.mock.calls[res.json.mock.calls.length - 1][0].products;
         catProducts.forEach((p) => {
             expect(p.category._id.toString()).toBe(category1._id.toString());
         });
@@ -484,9 +579,7 @@ describe('Product controller integration errors', () => {
             json: jest.fn(),
         };
 
-        const consoleSpy = jest
-            .spyOn(console, 'error')
-            .mockImplementation(() => {});
+        const consoleSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
 
         // 1. Get products when none exist
         await getProductController(null, res);

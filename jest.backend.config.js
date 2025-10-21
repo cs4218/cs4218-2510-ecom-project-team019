@@ -16,7 +16,7 @@ export default {
 
     // jest code coverage
     collectCoverage: true,
-    collectCoverageFrom: ['controllers/**', 'helpers/**', 'middlewares/**'],
+    collectCoverageFrom: ['controllers/**', 'helpers/**', 'middlewares/**', 'models/**'],
     coverageThreshold: {
         global: {
             // require 1% of lines and function coverage (so that can pass the GitHub Actions workflow)

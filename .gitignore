@@ -36,3 +36,6 @@ coverage/**
 
 # Environment variables
 .env
+
+# Playwright
+/playwright/.auth/
