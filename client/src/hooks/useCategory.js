@@ -1,4 +1,5 @@
-import { useState, useEffect, useContext, createContext } from "react";
+import React, { useState, useEffect, useContext, createContext } from "react";
+import toast from "react-hot-toast";
 import axios from "axios";
 
 const CategoryContext = createContext();
@@ -12,6 +13,7 @@ const CategoryProvider = ({ children }) => {
       setCategories(data?.category);
     } catch (error) {
       console.log(error);
+      toast.error("Something went wrong in getting category");
     }
   };
 
