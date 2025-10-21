@@ -3,27 +3,33 @@ import { jest } from '@jest/globals';
 const categoryModel = require('../models/categoryModel.js');
 const slugify = require('slugify');
 const {
-  createCategoryController,
-  updateCategoryController,
-  categoryController,
-  singleCategoryController,
-  deleteCategoryController,
+    createCategoryController,
+    updateCategoryController,
+    categoryController,
+    singleCategoryController,
+    deleteCategoryController,
 } = require('./categoryController.js');
+const productModel = require('../models/productModel.js');
 
 // Mock the modules
 jest.mock('../models/categoryModel.js', () => {
-  const mockCategoryModel = jest.fn();
-  mockCategoryModel.prototype.save = jest.fn();
-  mockCategoryModel.findOne = jest.fn();
-  mockCategoryModel.find = jest.fn();
-  mockCategoryModel.findByIdAndUpdate = jest.fn();
-  mockCategoryModel.findByIdAndDelete = jest.fn();
-  mockCategoryModel.create = jest.fn();
-  return mockCategoryModel;
+    const mockCategoryModel = jest.fn();
+    mockCategoryModel.prototype.save = jest.fn();
+    mockCategoryModel.findOne = jest.fn();
+    mockCategoryModel.find = jest.fn();
+    mockCategoryModel.findByIdAndUpdate = jest.fn();
+    mockCategoryModel.findByIdAndDelete = jest.fn();
+    mockCategoryModel.create = jest.fn();
+    return mockCategoryModel;
+});
+
+jest.mock('../models/productModel.js', () => {
+    const mockProductModel = jest.fn();
+    mockProductModel.find = jest.fn();
+    return mockProductModel;
 });
 
 jest.mock('slugify');
-
 
 describe('Category Controller', () => {
     let req, res;
@@ -48,9 +54,9 @@ describe('Category Controller', () => {
         it('should return 400 if name is not provided', async () => {
             await createCategoryController(req, res);
             expect(res.status).toHaveBeenCalledWith(400);
-            expect(res.send).toHaveBeenCalledWith({ 
+            expect(res.send).toHaveBeenCalledWith({
                 success: false,
-                message: 'Name is required' 
+                message: 'Name is required',
             });
         });
 
@@ -68,7 +74,10 @@ describe('Category Controller', () => {
         it('should create a new category and return 201', async () => {
             req.body.name = 'Test Category';
             categoryModel.findOne.mockResolvedValue(null);
-            const newCategory = { name: 'Test Category', slug: 'test-category' };
+            const newCategory = {
+                name: 'Test Category',
+                slug: 'test-category',
+            };
             const save = jest.fn().mockResolvedValue(newCategory);
             categoryModel.mockImplementation(() => ({
                 save,
@@ -102,7 +111,11 @@ describe('Category Controller', () => {
             req.body.name = 'Updated Category';
             req.params.id = '1';
 
-            const updatedCategory = {id: '1', name: 'Updated Category', slug: 'updated-category' };
+            const updatedCategory = {
+                id: '1',
+                name: 'Updated Category',
+                slug: 'updated-category',
+            };
 
             slugify.mockReturnValue('updated-category');
 
@@ -117,12 +130,15 @@ describe('Category Controller', () => {
                 message: 'Category Updated Successfully',
                 category: updatedCategory,
             });
-            }); 
+        });
 
         it('should return 409 if category name already exists', async () => {
             req.body.name = 'Existing Category';
             req.params.id = '1';
-            categoryModel.findOne.mockResolvedValue({ name: 'Existing Category', _id: '2' });
+            categoryModel.findOne.mockResolvedValue({
+                name: 'Existing Category',
+                _id: '2',
+            });
             await updateCategoryController(req, res);
             expect(res.status).toHaveBeenCalledWith(409);
             expect(res.send).toHaveBeenCalledWith({
@@ -131,13 +147,13 @@ describe('Category Controller', () => {
             });
         });
 
-
-
         it('should return 500 on error', async () => {
             req.body.name = 'Updated Category';
             req.params.id = '1';
             categoryModel.findOne.mockResolvedValue(false);
-            categoryModel.findByIdAndUpdate.mockRejectedValue(new Error('Test Error'));
+            categoryModel.findByIdAndUpdate.mockRejectedValue(
+                new Error('Test Error')
+            );
             await updateCategoryController(req, res);
             expect(res.status).toHaveBeenCalledWith(500);
             expect(res.send).toHaveBeenCalledWith({
@@ -203,6 +219,7 @@ describe('Category Controller', () => {
     describe('deleteCategoryController', () => {
         it('should delete a category and return 200', async () => {
             req.params.id = '1';
+            productModel.find.mockResolvedValue([]);
             categoryModel.findByIdAndDelete.mockResolvedValue({});
             await deleteCategoryController(req, res);
             expect(res.status).toHaveBeenCalledWith(200);
@@ -212,9 +229,28 @@ describe('Category Controller', () => {
             });
         });
 
+        it('should not delete a category with existing products and return 400', async () => {
+            req.params.id = '1';
+            productModel.find.mockResolvedValue([
+                {
+                    name: 'Test product',
+                },
+            ]);
+            categoryModel.findByIdAndDelete.mockResolvedValue({});
+            await deleteCategoryController(req, res);
+            expect(res.status).toHaveBeenCalledWith(400);
+            expect(res.send).toHaveBeenCalledWith({
+                success: false,
+                message: 'Cannot delete category with existing products',
+            });
+        });
+
         it('should return 500 on error', async () => {
             req.params.id = '1';
-            categoryModel.findByIdAndDelete.mockRejectedValue(new Error('Test Error'));
+            productModel.find.mockResolvedValue([]);
+            categoryModel.findByIdAndDelete.mockRejectedValue(
+                new Error('Test Error')
+            );
             await deleteCategoryController(req, res);
             expect(res.status).toHaveBeenCalledWith(500);
             expect(res.send).toHaveBeenCalledWith({
