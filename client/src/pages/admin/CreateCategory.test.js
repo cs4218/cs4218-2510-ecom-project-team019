@@ -1,8 +1,15 @@
+/* eslint-disable testing-library/no-wait-for-multiple-assertions */
 import React from 'react';
 import { render, screen, fireEvent, waitFor, within } from '@testing-library/react';
 import axios from 'axios';
 import toast from 'react-hot-toast';
 import CreateCategory from './CreateCategory';
+import { CategoryProvider } from '../../hooks/useCategory';
+
+// Helper function to wrap component with CategoryProvider
+const renderWithProviders = (ui) => {
+    return render(<CategoryProvider>{ui}</CategoryProvider>);
+};
 
 // Mock external dependencies
 jest.mock('axios');
@@ -51,7 +58,7 @@ describe('CreateCategory Page - Create Functionality', () => {
 
     it('should render the page and initial categories', async () => {
         axios.get.mockResolvedValueOnce({ data: { success: true, category: mockCategories } });
-        render(<CreateCategory />);
+        renderWithProviders(<CreateCategory />);
 
         // Check if main heading is present
         expect(screen.getByText('Manage Category')).toBeInTheDocument();
@@ -88,7 +95,7 @@ describe('CreateCategory Page - Create Functionality', () => {
             },
         });
 
-        render(<CreateCategory />);
+        renderWithProviders(<CreateCategory />);
 
         // Wait for initial categories to load
         await screen.findByText('Electronics');
@@ -132,7 +139,7 @@ describe('CreateCategory Page - Create Functionality', () => {
             response: { data: { message: errorMessage } },
         });
 
-        render(<CreateCategory />);
+        renderWithProviders(<CreateCategory />);
 
         // Wait for initial categories to load
         await screen.findByText('Electronics');
@@ -165,7 +172,7 @@ describe('CreateCategory Page - Create Functionality', () => {
         // Mock axios.post to throw a network error
         axios.post.mockRejectedValueOnce(new Error('Network Error'));
 
-        render(<CreateCategory />);
+        renderWithProviders(<CreateCategory />);
 
         // Wait for initial categories to load
         await screen.findByText('Electronics');
@@ -208,7 +215,7 @@ describe('CreateCategory Page - getAllCategory Functionality', () => {
             data: { success: true, category: mockCategories },
         });
 
-        render(<CreateCategory />);
+        renderWithProviders(<CreateCategory />);
 
         await waitFor(() => {
             expect(axios.get).toHaveBeenCalledWith(
@@ -222,7 +229,7 @@ describe('CreateCategory Page - getAllCategory Functionality', () => {
     it('should show an error toast if fetching categories fails', async () => {
         axios.get.mockRejectedValueOnce(new Error('Network Error'));
 
-        render(<CreateCategory />);
+        renderWithProviders(<CreateCategory />);
 
         await waitFor(() => {
             expect(axios.get).toHaveBeenCalledWith(
@@ -268,7 +275,7 @@ describe('CreateCategory Page - Update Functionality', () => {
             },
         });
 
-        render(<CreateCategory />);
+        renderWithProviders(<CreateCategory />);
 
         await screen.findByText('Electronics');
 
@@ -312,7 +319,7 @@ describe('CreateCategory Page - Update Functionality', () => {
             response: { data: { message: errorMessage } },
         });
 
-        render(<CreateCategory />);
+        renderWithProviders(<CreateCategory />);
         await screen.findByText('Electronics');
 
         fireEvent.click(screen.getAllByRole('button', { name: /edit/i })[0]);
@@ -337,7 +344,7 @@ describe('CreateCategory Page - Update Functionality', () => {
             data: { success: true, category: initialCategories },
         });
 
-        render(<CreateCategory />);
+        renderWithProviders(<CreateCategory />);
         await screen.findByText('Electronics');
 
         fireEvent.click(screen.getAllByRole('button', { name: /edit/i })[0]);
@@ -377,7 +384,7 @@ describe('CreateCategory Page - Delete Functionality', () => {
             data: { success: true, category: [initialCategories[1]] },
         }); // Remaining category
 
-        render(<CreateCategory />);
+        renderWithProviders(<CreateCategory />);
 
         await screen.findByText('Electronics');
 
@@ -405,11 +412,11 @@ describe('CreateCategory Page - Delete Functionality', () => {
         axios.get.mockResolvedValueOnce({
             data: { success: true, category: initialCategories },
         });
-        axios.delete.mockResolvedValueOnce({
-            data: { success: false, message: errorMessage },
+        axios.delete.mockRejectedValueOnce({ // Corrected from mockResolvedValueOnce
+            response: { data: { message: errorMessage } },
         });
 
-        render(<CreateCategory />);
+        renderWithProviders(<CreateCategory />);
         await screen.findByText('Electronics');
 
         fireEvent.click(screen.getAllByRole('button', { name: /delete/i })[0]);
@@ -421,13 +428,38 @@ describe('CreateCategory Page - Delete Functionality', () => {
         expect(axios.get).toHaveBeenCalledTimes(1); // No refresh
     });
 
+    it('should show a "not found" error toast if trying to delete a category that does not exist', async () => {
+        const errorMessage = 'Category not found';
+        axios.get.mockResolvedValueOnce({
+            data: { success: true, category: initialCategories },
+        });
+        axios.delete.mockRejectedValueOnce({
+            response: { status: 404, data: { message: errorMessage } },
+        });
+
+        renderWithProviders(<CreateCategory />);
+        await screen.findByText('Electronics');
+
+        // Click delete button for the first category
+        fireEvent.click(screen.getAllByRole('button', { name: /delete/i })[0]);
+
+        await waitFor(() => {
+            expect(axios.delete).toHaveBeenCalledWith(
+                `/api/v1/category/delete-category/${categoryToDelete._id}`
+            );
+        });
+
+        expect(toast.error).toHaveBeenCalledWith(errorMessage);
+        expect(axios.get).toHaveBeenCalledTimes(1); // No refresh
+    });
+
     it('should show generic error toast if delete fails (network error)', async () => {
         axios.delete.mockRejectedValueOnce(new Error('Network Error'));
         axios.get.mockResolvedValueOnce({
             data: { success: true, category: initialCategories },
         });
 
-        render(<CreateCategory />);
+        renderWithProviders(<CreateCategory />);
         await screen.findByText('Electronics');
 
         fireEvent.click(screen.getAllByRole('button', { name: /delete/i })[0]);

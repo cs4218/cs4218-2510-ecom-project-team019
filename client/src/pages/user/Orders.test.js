@@ -15,9 +15,9 @@ jest.mock('../../context/cart', () => ({
 jest.mock('../../context/search', () => ({
     useSearch: jest.fn(() => [{ keyword: '' }, jest.fn()]),
 }));
-jest.mock('../../hooks/useCategory', () => {
-    return jest.fn(() => []); // Mock useCategory hook to an empty array
-});
+jest.mock('../../hooks/useCategory', () => ({
+    useCategory: jest.fn(() => [[]])
+}));
 
 describe('Orders component', () => {
     beforeEach(() => {
