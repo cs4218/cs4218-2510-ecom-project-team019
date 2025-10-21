@@ -1,16 +1,19 @@
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
 import Layout from "./../../components/Layout";
 import AdminMenu from "./../../components/AdminMenu";
 import toast from "react-hot-toast";
 import axios from "axios";
 import CategoryForm from "../../components/Form/CategoryForm";
 import { Modal } from "antd";
+import { useCategory } from "../../hooks/useCategory";
+
 const CreateCategory = () => {
-  const [categories, setCategories] = useState([]);
+  const [categories, getCategories] = useCategory();
   const [name, setName] = useState("");
   const [visible, setVisible] = useState(false);
   const [selected, setSelected] = useState(null);
   const [updatedName, setUpdatedName] = useState("");
+
   //handle Form
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -21,9 +24,9 @@ const CreateCategory = () => {
       });
       if (data?.success) {
         toast.success(`${name} is created`);
-        setName(""); 
-        getAllCategory();
-      } 
+        setName("");
+        getCategories();
+      }
     } catch (error) {
       console.log(error);
       if (error.response) {
@@ -33,23 +36,6 @@ const CreateCategory = () => {
       }
     }
   };
-
-  //get all cat
-  const getAllCategory = async () => {
-    try {
-      const { data } = await axios.get("/api/v1/category/get-category");
-      if (data.success) {
-        setCategories(data.category);
-      }
-    } catch (error) {
-      console.log(error);
-      toast.error("Something went wrong in getting category");
-    }
-  };
-
-  useEffect(() => {
-    getAllCategory();
-  }, []);
 
   //update category
   const handleUpdate = async (e) => {
@@ -64,16 +50,17 @@ const CreateCategory = () => {
         setSelected(null);
         setUpdatedName("");
         setVisible(false);
-        getAllCategory();
+        getCategories();
       }
     } catch (error) {
       if (error.response) {
         toast.error(error.response.data.message);
       } else {
-      toast.error("Something went wrong");
+        toast.error("Something went wrong");
       }
     }
   };
+
   //delete category
   const handleDelete = async (pId) => {
     try {
@@ -82,15 +69,17 @@ const CreateCategory = () => {
       );
       if (data.success) {
         toast.success(`Category is deleted`);
-
-        getAllCategory();
-      } else {
-        toast.error(data.message);
+        getCategories();
       }
     } catch (error) {
-      toast.error("Something went wrong");
+      if (error.response) {
+        toast.error(error.response.data.message);
+      } else {
+        toast.error("Something went wrong");
+      }
     }
   };
+
   return (
     <Layout title={"Dashboard - Create Category"}>
       <div className="container-fluid m-3 p-3">

@@ -23,8 +23,7 @@ jest.mock('../../context/search', () => ({
 }));  
 
 jest.mock('../../hooks/useCategory', () => ({
-    __esModule: true,
-    default: jest.fn(() => []) // Mock useCategory hook to return empty array
+    useCategory: jest.fn(() => [[]]),
 }));
 
 Object.defineProperty(window, 'localStorage', {
