@@ -1,4 +1,4 @@
-name: Run Tests # name of this GitHub Actions workflow
+name: Unit & Integration Tests using Jest # name of this GitHub Actions workflow
 
 on: # defines when this workflow should run
     pull_request: # when a pull request is opened or updated against the main branch
