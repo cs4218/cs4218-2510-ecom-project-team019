@@ -1,12 +1,21 @@
 # CS4218 Project - Virtual Vault
 
-## Workload / Contribution
+## MS1 Workload / Contribution (Unit Tests)
 
 | Contributor      | Module / Feature                                                                                                                                                                                |
 | ---------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Zacharias Wong   | Order.js, authController.js (updateProfileController, getOrdersController, getAllOrdersController, orderStatusController), orderModel.js, productController.js (braintreeTokenController, brainTreePaymentController)                                                                                                                                                                                                 |
 | Tiong Meng Sheng | auth.js, Register.js, Login.js, authHelper.js, authMiddleware.js, authController.js (registerController, loginController, forgotPasswordController, testController)                             |
 | Wong Ja Yee      | Categories.js, CreateCategory.js, CategoryForm.js, useCategory.js, categoryController.js                                                                                                        |
+| Brendan Koh      | productController.js (all except braintreeTokenController, braintreePaymentController), CategoryProduct.js, Products.js, UpdateProduct.js, CreateProduct.js, ProductDetails.js, productModel.js |
+
+## MS2 Workload / Contribution (UI Tests)
+
+| Contributor      | Module / Feature                                                                                                                                                                                |
+| ---------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Zacharias Wong   | Order.js, authController.js (updateProfileController, getOrdersController, getAllOrdersController, orderStatusController), orderModel.js, productController.js (braintreeTokenController, brainTreePaymentController)                                                                                                                                                                                                 |
+| Tiong Meng Sheng | auth.js, Register.js, Login.js, authHelper.js, authMiddleware.js, authController.js (registerController, loginController, forgotPasswordController, testController)                             |
+| Wong Ja Yee      | All Categories Page, Categories Dropdown, Create Category Form, Category CRUD                                                                                                        |
 | Brendan Koh      | productController.js (all except braintreeTokenController, braintreePaymentController), CategoryProduct.js, Products.js, UpdateProduct.js, CreateProduct.js, ProductDetails.js, productModel.js |
 
 
