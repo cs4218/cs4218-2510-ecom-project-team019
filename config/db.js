@@ -85,7 +85,7 @@ const seedTestData = async () => {
                     'Amount is an invalid format.\nCredit card number is not an accepted test number.',
                 success: false,
             },
-            buyer: new mongoose.Types.ObjectId('67a218decf4efddf1e5358ac'),
+            buyer: new mongoose.Types.ObjectId('68f3eb8fa135bb8163fe6623'),
             status: 'Not Process',
             createdAt: new Date('2025-02-04T13:42:16.741Z'),
             updatedAt: new Date('2025-02-04T13:42:16.741Z'),

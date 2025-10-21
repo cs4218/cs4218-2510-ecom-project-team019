@@ -407,44 +407,40 @@ export const brainTreePaymentController = async (req, res) => {
                 .json({ ok: false, message: 'Missing nonce or cart' });
         }
 
+        const products = cart.map((product) => product._id);
+
         let total = 0;
         cart.forEach((i) => {
             total += i.price;
         });
 
-        gateway.transaction.sale(
-            {
-                amount: total.toFixed(2), // Braintree expects string with 2 decimals
-                paymentMethodNonce: nonce,
-                options: {
-                    submitForSettlement: true,
+        // Wrap the callback-based function in a Promise
+        const result = await new Promise((resolve, reject) => {
+            gateway.transaction.sale(
+                {
+                    amount: total.toFixed(2),
+                    paymentMethodNonce: nonce,
+                    options: { submitForSettlement: true },
                 },
-            },
-            async (error, result) => {
-                if (error) {
-                    res.status(500).json({ ok: false, error });
-                    return;
+                (error, result) => {
+                    if (error) return reject(error);
+                    resolve(result);
                 }
+            );
+        });
 
-                if (result && result.success) {
-                    try {
-                        await new orderModel({
-                            products: cart,
-                            payment: result,
-                            buyer: req.user._id,
-                        }).save();
+        if (result && result.success) {
+            await orderModel.create({
+                products: products,
+                payment: result,
+                buyer: req.user._id,
+            });
 
-                        res.json({ ok: true, transaction: result });
-                    } catch (dbError) {
-                        res.status(500).json({ ok: false, error: dbError });
-                    }
-                } else {
-                    res.status(500).json({ ok: false, error: result });
-                }
-            }
-        );
+            res.status(200).json({ ok: true, transaction: result });
+        } else {
+            res.status(500).json({ ok: false, error: result });
+        }
     } catch (error) {
-        console.error(err);
-        res.status(500).json({ ok: false, error: err.message });
+        res.status(500).json({ ok: false, error: error.message });
     }
 };

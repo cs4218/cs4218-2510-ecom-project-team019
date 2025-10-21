@@ -1,12 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Checkbox, Radio } from 'antd';
+import { Checkbox } from 'antd';
 import { Prices } from '../components/Prices';
 import { useCart } from '../context/cart';
 import axios from 'axios';
 import toast from 'react-hot-toast';
 import Layout from './../components/Layout';
-import { AiOutlineReload } from 'react-icons/ai';
 import '../styles/Homepages.css';
 
 const HomePage = () => {
@@ -14,105 +13,141 @@ const HomePage = () => {
     const [cart, setCart] = useCart();
     const [products, setProducts] = useState([]);
     const [categories, setCategories] = useState([]);
-    const [checked, setChecked] = useState([]);
-    const [radio, setRadio] = useState([]);
     const [total, setTotal] = useState(0);
     const [page, setPage] = useState(1);
     const [loading, setLoading] = useState(false);
 
-    //get all cat
-    const getAllCategory = async () => {
-        try {
-            const { data } = await axios.get('/api/v1/category/get-category');
-            if (data?.success) {
-                setCategories(data?.category);
-            }
-        } catch (error) {
-            console.log(error);
-        }
-    };
+    const [filteredCategories, setFilteredCategories] = useState([]);
+    const [filteredPrices, setFilteredPrices] = useState([]);
+    const [filteredProducts, setFilteredProducts] = useState([]);
 
     useEffect(() => {
-        getAllCategory();
-        getTotal();
-    }, []);
-    //get products
-    const getAllProducts = async () => {
-        try {
-            setLoading(true);
-            const { data } = await axios.get(
-                `/api/v1/product/product-list/${page}`
-            );
-            setLoading(false);
-            setProducts(data.products);
-        } catch (error) {
-            setLoading(false);
-            console.log(error);
-        }
-    };
+        if (!products.length) return;
 
-    //getTOtal COunt
-    const getTotal = async () => {
-        try {
-            const { data } = await axios.get('/api/v1/product/product-count');
-            setTotal(data?.total);
-        } catch (error) {
-            console.log(error);
+        const filtered = products.filter((p) => {
+            // Show all products if no filters selected
+            const categoryMatch =
+                filteredCategories.length === 0 ||
+                filteredCategories.some((c) => c._id === p.category);
+
+            const priceMatch =
+                filteredPrices.length === 0 ||
+                filteredPrices.some(
+                    (priceObject) =>
+                        Math.floor(p.price) >= priceObject.priceRange[0] &&
+                        Math.floor(p.price) <= priceObject.priceRange[1]
+                );
+
+            return categoryMatch && priceMatch;
+        });
+
+        setFilteredProducts(filtered);
+    }, [filteredCategories, filteredPrices, products]);
+
+    useEffect(() => {
+        async function fetchData() {
+            const getAllCategories = async () => {
+                try {
+                    const { data } = await axios.get(
+                        '/api/v1/category/get-category'
+                    );
+                    if (data?.success) {
+                        setCategories(data?.category);
+                    }
+                } catch (error) {
+                    console.log(error);
+                }
+            };
+
+            const getAllProducts = async () => {
+                try {
+                    setLoading(true);
+                    const { data } = await axios.get(
+                        `/api/v1/product/product-list/${page}`
+                    );
+                    setLoading(false);
+                    setProducts(data.products);
+                } catch (error) {
+                    setLoading(false);
+                    console.log(error);
+                }
+            };
+
+            const getTotal = async () => {
+                try {
+                    const { data } = await axios.get(
+                        '/api/v1/product/product-count'
+                    );
+                    setTotal(data?.total);
+                } catch (error) {
+                    console.log(error);
+                }
+            };
+
+            await getAllCategories();
+            await getAllProducts();
+            await getTotal();
         }
-    };
+
+        fetchData();
+    }, []);
 
     useEffect(() => {
         if (page === 1) return;
+
+        async function loadMore() {
+            try {
+                setLoading(true);
+                const { data } = await axios.get(
+                    `/api/v1/product/product-list/${page}`
+                );
+                setLoading(false);
+                setProducts((prev) => [...prev, ...data?.products]);
+            } catch (error) {
+                console.log(error);
+                setLoading(false);
+            }
+        }
+
         loadMore();
     }, [page]);
-    //load more
-    const loadMore = async () => {
-        try {
-            setLoading(true);
-            const { data } = await axios.get(
-                `/api/v1/product/product-list/${page}`
-            );
-            setLoading(false);
-            setProducts([...products, ...data?.products]);
-        } catch (error) {
-            console.log(error);
-            setLoading(false);
-        }
-    };
 
-    // filter by cat
-    const handleFilter = (value, id) => {
-        let all = [...checked];
-        if (value) {
-            all.push(id);
+    // filter by categories
+    const handleFilterCategories = (checked, category) => {
+        if (checked) {
+            const copiedCategories = [...filteredCategories];
+            copiedCategories.push(category);
+
+            setFilteredCategories(copiedCategories);
         } else {
-            all = all.filter((c) => c !== id);
-        }
-        setChecked(all);
-    };
-    useEffect(() => {
-        if (!checked.length || !radio.length) getAllProducts();
-    }, [checked.length, radio.length]);
-
-    useEffect(() => {
-        if (checked.length || radio.length) filterProduct();
-    }, [checked, radio]);
-
-    //get filterd product
-    const filterProduct = async () => {
-        try {
-            const { data } = await axios.post(
-                '/api/v1/product/product-filters',
-                {
-                    checked,
-                    radio,
-                }
+            const copiedCategories = [...filteredCategories].filter(
+                (c) => c._id !== category._id
             );
-            setProducts(data?.products);
-        } catch (error) {
-            console.log(error);
+
+            setFilteredCategories(copiedCategories);
         }
     };
+
+    const handleFilterPrice = (checked, Price) => {
+        if (checked) {
+            const copiedPrices = [...filteredPrices];
+            copiedPrices.push(Price);
+
+            setFilteredPrices(copiedPrices);
+        } else {
+            const copiedPrices = [...filteredPrices].filter(
+                (p) => p._id !== Price._id
+            );
+
+            setFilteredPrices(copiedPrices);
+        }
+    };
+
+    const handleResetFilters = () => {
+        setFilteredCategories([]);
+        setFilteredPrices([]);
+    };
+
     return (
         <Layout title={'ALL Products - Best offers '}>
             {/* banner image */}
@@ -130,8 +165,11 @@ const HomePage = () => {
                         {categories?.map((c) => (
                             <Checkbox
                                 key={c._id}
+                                checked={filteredCategories.some(
+                                    (fc) => fc._id === c._id
+                                )}
                                 onChange={(e) =>
-                                    handleFilter(e.target.checked, c._id)
+                                    handleFilterCategories(e.target.checked, c)
                                 }
                             >
                                 {c.name}
@@ -141,18 +179,26 @@ const HomePage = () => {
                     {/* price filter */}
                     <h4 className="text-center mt-4">Filter By Price</h4>
                     <div className="d-flex flex-column">
-                        <Radio.Group onChange={(e) => setRadio(e.target.value)}>
+                        <div className="d-flex flex-column">
                             {Prices?.map((p) => (
-                                <div key={p._id}>
-                                    <Radio value={p.array}>{p.name}</Radio>
-                                </div>
+                                <Checkbox
+                                    key={p._id}
+                                    checked={filteredPrices.some(
+                                        (fp) => fp._id === p._id
+                                    )}
+                                    onChange={(e) =>
+                                        handleFilterPrice(e.target.checked, p)
+                                    }
+                                >
+                                    {p.name}
+                                </Checkbox>
                             ))}
-                        </Radio.Group>
+                        </div>
                     </div>
                     <div className="d-flex flex-column">
                         <button
                             className="btn btn-danger"
-                            onClick={() => window.location.reload()}
+                            onClick={() => handleResetFilters()}
                         >
                             RESET FILTERS
                         </button>
@@ -161,7 +207,7 @@ const HomePage = () => {
                 <div className="col-md-9 ">
                     <h1 className="text-center">All Products</h1>
                     <div className="d-flex flex-wrap">
-                        {products?.map((p) => (
+                        {filteredProducts?.map((p) => (
                             <div className="card m-2" key={p._id}>
                                 <img
                                     src={`/api/v1/product/product-photo/${p._id}`}

@@ -4,10 +4,12 @@ import { render, screen } from '@testing-library/react';
 import Categories from './Categories';
 import React from 'react';
 import { MemoryRouter } from 'react-router-dom';
-import useCategory from '../hooks/useCategory';
+import { useCategory } from '../hooks/useCategory';
 import { describe } from 'node:test';
 
-jest.mock('../hooks/useCategory')
+jest.mock('../hooks/useCategory', () => ({
+    useCategory: jest.fn(() => [[]])
+}));
 jest.mock('../components/Layout', () => ({ children, title }) => (
     <div>
         <h1>{title}</h1>
@@ -26,7 +28,7 @@ describe('Categories Page', () => {
             { _id: '1', name: 'Category 1', slug: 'category-1' },
             { _id: '2', name: 'Category 2', slug: 'category-2' },
         ];
-        useCategory.mockReturnValue(mockCategories);
+        useCategory.mockReturnValue([mockCategories, jest.fn()]);
 
         render(
             <MemoryRouter>
@@ -47,7 +49,7 @@ describe('Categories Page', () => {
 
     it('should render the title and no categories when useCategory returns an empty array', () => {
         // Mock the useCategory hook to return an empty array
-        useCategory.mockReturnValue([]);
+        useCategory.mockReturnValue([[], jest.fn()]);
 
         render(
             <MemoryRouter>
