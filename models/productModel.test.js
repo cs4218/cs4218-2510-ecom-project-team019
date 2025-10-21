@@ -12,6 +12,13 @@ beforeAll(async () => {
     });
 });
 
+beforeEach(async () => {
+    const collections = Object.values(mongoose.connection.collections);
+    for (const coll of collections) {
+        await coll.deleteMany({});
+    }
+});
+
 afterAll(async () => {
     await mongoose.disconnect();
     await mongoServer.stop();
@@ -84,6 +91,54 @@ describe('Product Model', () => {
         await expect(product.validate()).rejects.toThrow(
             /Cast to ObjectId failed/
         );
+    });
+
+    it('should fail when name already exists', async () => {
+        const product = new Product({
+            name: 'A',
+            slug: 'a',
+            description: 'a',
+            price: 10,
+            category: new mongoose.Types.ObjectId(),
+            quantity: 5,
+        });
+        await expect(product.validate()).resolves.toBeUndefined();
+        await product.save();
+
+        await expect(
+            Product.create({
+                name: 'A',
+                slug: 'b',
+                description: 'a',
+                price: 10,
+                category: new mongoose.Types.ObjectId(),
+                quantity: 5,
+            })
+        ).rejects.toThrow(/E11000 duplicate key error/);
+    });
+
+    it('should fail when slug already exists', async () => {
+        const product = new Product({
+            name: 'A',
+            slug: 'a',
+            description: 'a',
+            price: 10,
+            category: new mongoose.Types.ObjectId(),
+            quantity: 5,
+        });
+        await expect(product.validate()).resolves.toBeUndefined();
+        await product.save();
+
+        await expect(
+            Product.create({
+                name: 'B',
+                slug: 'a',
+                description: 'a',
+                price: 10,
+                category: new mongoose.Types.ObjectId(),
+                quantity: 5,
+            })
+        ).rejects.toThrow(/E11000 duplicate key error/);
     });
 
     it('should save without photo and shipping', async () => {

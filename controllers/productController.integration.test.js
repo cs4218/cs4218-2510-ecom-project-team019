@@ -467,6 +467,90 @@ describe('Product controller integration errors', () => {
         });
     });
 
+    it('Should not allow creation of duplicate products', async () => {
+        // Setup: create a category for products
+        const category1 = await Category.create({
+            name: 'cat1',
+            slug: slugify('cat1'),
+        });
+        const req = {};
+        const res = {
+            status: jest.fn().mockReturnThis(),
+            json: jest.fn(),
+        };
+
+        // 1. Get products when none exist
+        await getProductController(null, res);
+        expect(res.status).toHaveBeenCalledWith(200);
+        expect(res.json).toHaveBeenCalledWith({
+            success: true,
+            length: 0,
+            message: 'All Products',
+            products: [],
+        });
+
+        // 2. Create a new product
+        const createReq = {
+            fields: {
+                name: `Product`,
+                description: `Description for product`,
+                price: 300,
+                category: category1,
+                quantity: 30,
+                shipping: true,
+            },
+            files: {},
+        };
+        await createProductController(createReq, res);
+        expect(res.status).toHaveBeenCalledWith(201);
+
+        const productId =
+            res.json.mock.calls[res.json.mock.calls.length - 1][0].products._id;
+
+        // 3. Create the product with the same name
+        const createReqName = {
+            fields: {
+                name: `Product`,
+                description: `Another description for product`,
+                price: 403,
+                category: category1,
+                quantity: 10,
+                shipping: false,
+            },
+            files: {},
+        };
+        await createProductController(createReqName, res);
+        expect(res.status).toHaveBeenCalledWith(409);
+        expect(res.json).toHaveBeenCalledWith({
+            success: false,
+            message: 'Product already exists',
+        });
+
+        // 4. Delete the product
+        const deleteReq = { params: { pid: productId } };
+        await deleteProductController(deleteReq, res);
+        expect(res.status).toHaveBeenCalledWith(200);
+        expect(res.json).toHaveBeenCalledWith({
+            success: true,
+            message: 'Product deleted successfully',
+        });
+
+        // 5. Re-creating the product should be successful
+        const createReqAfterDeletion = {
+            fields: {
+                name: `Product`,
+                description: `Good description for product`,
+                price: 49,
+                category: category1,
+                quantity: 10,
+                shipping: false,
+            },
+            files: {},
+        };
+        await createProductController(createReqAfterDeletion, res);
+        expect(res.status).toHaveBeenCalledWith(201);
+    });
+
     it('Updating fail should not update the product list', async () => {
         // Setup: create a category for products
         const category1 = await Category.create({
@@ -587,5 +671,163 @@ describe('Product controller integration errors', () => {
         });
         const p4After = await productModel.findById(product4._id);
         expect(p4After.name).toBe('Product 4');
+    });
+
+    it('Updated products should not have name clashes', async () => {
+        // Setup: create a category for products
+        const category1 = await Category.create({
+            name: 'cat1',
+            slug: slugify('cat1'),
+        });
+        const req = {};
+        const res = {
+            status: jest.fn().mockReturnThis(),
+            json: jest.fn(),
+        };
+
+        // 1. Get products when none exist
+        await getProductController(null, res);
+        expect(res.status).toHaveBeenCalledWith(200);
+        expect(res.json).toHaveBeenCalledWith({
+            success: true,
+            length: 0,
+            message: 'All Products',
+            products: [],
+        });
+
+        // 2. Create the first product
+        const createReq = {
+            fields: {
+                name: `Product`,
+                description: `Description for product`,
+                price: 300,
+                category: category1,
+                quantity: 30,
+                shipping: true,
+            },
+            files: {},
+        };
+        await createProductController(createReq, res);
+        expect(res.status).toHaveBeenCalledWith(201);
+
+        const productId =
+            res.json.mock.calls[res.json.mock.calls.length - 1][0].products._id;
+
+        // 3. Create the second product
+        const createReq2 = {
+            fields: {
+                name: `Product 2`,
+                description: `Description for product`,
+                price: 300,
+                category: category1,
+                quantity: 30,
+                shipping: true,
+            },
+            files: {},
+        };
+        await createProductController(createReq2, res);
+        expect(res.status).toHaveBeenCalledWith(201);
+
+        const productId2 =
+            res.json.mock.calls[res.json.mock.calls.length - 1][0].products._id;
+
+        // 4. Update the first product with the same name - should work
+        const updateReq1 = {
+            params: { pid: productId.toString() },
+            fields: {
+                name: `Product`,
+                description: `Another description for product`,
+                price: 403,
+                category: category1,
+                quantity: 10,
+                shipping: false,
+            },
+            files: {},
+        };
+        await updateProductController(updateReq1, res);
+        expect(res.status).toHaveBeenCalledWith(200);
+        expect(res.json).toHaveBeenCalledWith(
+            expect.objectContaining({
+                success: true,
+                message: 'Product updated successfully',
+            })
+        );
+
+        // 5. Update the first product with the same name - should return 409
+        const updateReq2 = {
+            params: { pid: productId2.toString() },
+            fields: {
+                name: `Product`,
+                description: `Another description for product`,
+                price: 403,
+                category: category1,
+                quantity: 10,
+                shipping: false,
+            },
+            files: {},
+        };
+        await updateProductController(updateReq2, res);
+        expect(res.status).toHaveBeenCalledWith(409);
+        expect(res.json).toHaveBeenCalledWith(
+            expect.objectContaining({
+                success: false,
+                message: 'A product with this name already exists',
+            })
+        );
+    });
+
+    it('Updating returns 404 if product to update does not exist', async () => {
+        // Setup: create a category for products
+        const category1 = await Category.create({
+            name: 'cat1',
+            slug: slugify('cat1'),
+        });
+        const req = {};
+        const res = {
+            status: jest.fn().mockReturnThis(),
+            json: jest.fn(),
+        };
+
+        // 1. Get products when none exist
+        await getProductController(null, res);
+        expect(res.status).toHaveBeenCalledWith(200);
+        expect(res.json).toHaveBeenCalledWith({
+            success: true,
+            length: 0,
+            message: 'All Products',
+            products: [],
+        });
+
+        // 2. Update a product that does not exist
+        const updateReq1 = {
+            params: { pid: new mongoose.Types.ObjectId().toString() },
+            fields: {
+                name: `Product`,
+                description: `Another description for product`,
+                price: 403,
+                category: category1,
+                quantity: 10,
+                shipping: false,
+            },
+            files: {},
+        };
+        await updateProductController(updateReq1, res);
+        expect(res.status).toHaveBeenCalledWith(404);
+        expect(res.json).toHaveBeenCalledWith(
+            expect.objectContaining({
+                success: false,
+                message: 'Product not found',
+            })
+        );
+
+        // 3. Product count should still be 0
+        await getProductController(null, res);
+        expect(res.status).toHaveBeenCalledWith(200);
+        expect(res.json).toHaveBeenCalledWith({
+            success: true,
+            length: 0,
+            message: 'All Products',
+            products: [],
+        });
     });
 });
