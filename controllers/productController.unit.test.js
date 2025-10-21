@@ -1206,7 +1206,7 @@ describe('updateProductController', () => {
 
         await updateProductController(req, res);
 
-        expect(res.status).toHaveBeenCalledWith(201);
+        expect(res.status).toHaveBeenCalledWith(200);
         expect(res.json).toHaveBeenCalledWith({
             success: true,
             message: 'Product updated successfully',
@@ -1237,7 +1237,7 @@ describe('updateProductController', () => {
 
         await updateProductController(reqMissingImage, res);
 
-        expect(res.status).toHaveBeenCalledWith(201);
+        expect(res.status).toHaveBeenCalledWith(200);
         expect(res.json).toHaveBeenCalledWith({
             success: true,
             message: 'Product updated successfully',
