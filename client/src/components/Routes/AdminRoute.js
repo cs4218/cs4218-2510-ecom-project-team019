@@ -1,25 +1,44 @@
-import { useState,useEffect } from "react";
-import { useAuth } from "../../context/auth";
-import { Outlet } from "react-router-dom";
+import { useState, useEffect } from 'react';
+import { useAuth } from '../../context/auth';
+import { Outlet } from 'react-router-dom';
 import axios from 'axios';
-import { set } from "mongoose";
-import Spinner from "../Spinner";
+import { set } from 'mongoose';
+import Spinner from '../Spinner';
 
-export default function AdminRoute(){
-    const [ok,setOk] = useState(false)
-    const [auth,setAuth] = useAuth()
+export default function AdminRoute() {
+    const [ok, setOk] = useState(false);
+    const [loggedIn, setLoggedIn] = useState(false);
+    const [auth, setAuth] = useAuth();
 
-    useEffect(()=> {
-        const authCheck = async() => {
-            const res = await axios.get("/api/v1/auth/admin-auth");
-            if(res.data.ok){
-                setOk(true);
-            } else {
+    useEffect(() => {
+        const authCheck = async () => {
+            try {
+                const res = await axios.get('/api/v1/auth/admin-auth');
+                if (res.data.ok) {
+                    setOk(true);
+                } else {
+                    setOk(false);
+                    await loginCheck();
+                }
+            } catch (e) {
                 setOk(false);
+                await loginCheck();
+            }
+        };
+        const loginCheck = async () => {
+            try {
+                const res = await axios.get('/api/v1/auth/user-auth');
+                if (res.data.ok) {
+                    setLoggedIn(true);
+                } else {
+                    setLoggedIn(false);
+                }
+            } catch (e) {
+                setLoggedIn(false);
             }
         };
         if (auth?.token) authCheck();
     }, [auth?.token]);
-    
-    return ok ? <Outlet /> : <Spinner/>;
+
+    return ok ? <Outlet /> : loggedIn ? <Spinner path="" /> : <Spinner />;
 }
