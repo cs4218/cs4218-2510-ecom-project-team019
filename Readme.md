@@ -13,9 +13,9 @@
 
 | Contributor      | Module / Feature                                                                                                                                                                                                      |
 | ---------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Zacharias Wong   | Order.js, authController.js (updateProfileController, getOrdersController, getAllOrdersController, orderStatusController), orderModel.js, productController.js (braintreeTokenController, brainTreePaymentController) |
-| Tiong Meng Sheng | auth.js, Register.js, Login.js, authHelper.js, authMiddleware.js, authController.js (registerController, loginController, forgotPasswordController, testController)                                                   |
-| Wong Ja Yee      | categoryController.integration.test.js, CategoryFormTest.spec.ts and CategoryPageTest.spec.ts (All Categories Page, Categories Dropdown, Create Category Form, Category CRUD)                                                                                                                                         |
+| Zacharias Wong   | UI tests: HomePage, DashboardOrder, Profile, Orders. Integration tests: authController.js (updateProfileController, getOrdersController, getAllOrdersController, orderStatusController), orderModel.js, productController.js (braintreeTokenController, brainTreePaymentController)  |
+| Tiong Meng Sheng | UI tests: Register.js, Login.js. Integration tests: authHelper.js, authMiddleware.js, authController.js (registerController, loginController, forgotPasswordController)                                                   |
+| Wong Ja Yee      | categoryController.integration.test.js, CategoryFormTest.spec.ts and CategoryPageTest.spec.ts (All Categories Page, Categories Dropdown, Create Category Form, Category CRUD)                                                                                                                                      |
 | Brendan Koh      | productController.integration.test.js (excl. braintree), productRoutes.integration.test.js, categoryProductControllers.integration.test.js, ProductPageTest.spec.ts, Reusable Playwright environment setup (db.js)    |
 
 ## 1. Project Introduction
