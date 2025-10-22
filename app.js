@@ -4,6 +4,7 @@ import authRoutes from './routes/authRoute.js';
 import categoryRoutes from './routes/categoryRoutes.js';
 import productRoutes from './routes/productRoutes.js';
 import cors from 'cors';
+import { seedTestData } from './config/db.js';
 
 const app = express();
 
@@ -21,6 +22,16 @@ app.use('/api/v1/product', productRoutes);
 
 app.get('/', (req, res) => {
     res.send('<h1>Welcome to ecommerce app</h1>');
+});
+
+// test reset endpoint to convert back to seeded DB state
+app.post('/api/v1/test/reset', async (req, res) => {
+    try {
+        await seedTestData();
+        res.status(200).send('Reset test data successfully');
+    } catch (e) {
+        res.status(500).send('Error when resetting test data');
+    }
 });
 
 export default app;

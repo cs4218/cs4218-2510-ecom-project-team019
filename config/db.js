@@ -267,7 +267,7 @@ const connectDB = async () => {
             console.log(
                 `Connected to in-memory MongoDB instance`.bgMagenta.white
             );
-            seedTestData();
+            await seedTestData();
             console.log(`Seeded test data successfully`.bgMagenta.white);
         } else {
             const conn = await mongoose.connect(process.env.MONGO_URL);
@@ -282,3 +282,4 @@ const connectDB = async () => {
 };
 
 export default connectDB;
+export { seedTestData };

@@ -888,16 +888,18 @@ describe('createProductController', () => {
             photo: { size: 500000, path: 'path/to/photo', type: 'image/png' },
         },
     };
-    const res = {
-        status: jest.fn().mockReturnThis(),
-        json: jest.fn(),
-    };
 
     beforeEach(() => {
         jest.clearAllMocks();
     });
 
+    const res = {
+        status: jest.fn().mockReturnThis(),
+        json: jest.fn(),
+    };
+
     it('should return an error if name is missing', async () => {
+        productModel.findOne.mockResolvedValue(null);
         const reqMissingName = { ...req, fields: { ...req.fields, name: '' } };
         await createProductController(reqMissingName, res);
 
@@ -908,6 +910,7 @@ describe('createProductController', () => {
     });
 
     it('should return an error if description is missing', async () => {
+        productModel.findOne.mockResolvedValue(null);
         const reqMissingDescription = {
             ...req,
             fields: { ...req.fields, description: '' },
@@ -921,6 +924,7 @@ describe('createProductController', () => {
     });
 
     it('should return an error if price is missing', async () => {
+        productModel.findOne.mockResolvedValue(null);
         const reqMissingPrice = {
             ...req,
             fields: { ...req.fields, price: undefined },
@@ -934,6 +938,7 @@ describe('createProductController', () => {
     });
 
     it('should return an error if category is missing', async () => {
+        productModel.findOne.mockResolvedValue(null);
         const reqMissingCategory = {
             ...req,
             fields: { ...req.fields, category: '' },
@@ -947,6 +952,7 @@ describe('createProductController', () => {
     });
 
     it('should return an error if quantity is missing', async () => {
+        productModel.findOne.mockResolvedValue(null);
         const reqMissingQuantity = {
             ...req,
             fields: { ...req.fields, quantity: undefined },
@@ -960,6 +966,7 @@ describe('createProductController', () => {
     });
 
     it('should return an error if shipping is missing', async () => {
+        productModel.findOne.mockResolvedValue(null);
         const reqMissingShipping = {
             ...req,
             fields: { ...req.fields, shipping: undefined },
@@ -973,6 +980,7 @@ describe('createProductController', () => {
     });
 
     it('should return an error if photo is more than 1MB', async () => {
+        productModel.findOne.mockResolvedValue(null);
         const reqMissingPhoto = {
             ...req,
             files: { photo: { ...req.files.photo, size: 2000000 } },
@@ -986,6 +994,7 @@ describe('createProductController', () => {
     });
 
     it('should create product if all fields provided', async () => {
+        productModel.findOne.mockResolvedValue(null);
         const product = {
             _id: '1',
             name: 'a',
@@ -1018,6 +1027,7 @@ describe('createProductController', () => {
     });
 
     it('should create product if photo not provided', async () => {
+        productModel.findOne.mockResolvedValue(null);
         const product = {
             _id: '1',
             name: 'a',
@@ -1050,6 +1060,7 @@ describe('createProductController', () => {
     });
 
     it('should handle errors properly', async () => {
+        productModel.findOne.mockResolvedValue(null);
         productModel.mockImplementation(() => {
             throw new Error('DB fail');
         });
@@ -1066,6 +1077,21 @@ describe('createProductController', () => {
             success: false,
             message: 'Error while creating product',
             error: 'DB fail',
+        });
+    });
+
+    it('should return 409 if duplicate product is found', async () => {
+        // oh no! duplicate product is found
+        productModel.findOne.mockResolvedValue({
+            _id: '0',
+        });
+
+        await createProductController(req, res);
+
+        expect(res.status).toHaveBeenCalledWith(409);
+        expect(res.json).toHaveBeenCalledWith({
+            success: false,
+            message: 'Product already exists',
         });
     });
 });
@@ -1095,6 +1121,7 @@ describe('updateProductController', () => {
     });
 
     it('should return an error if name is missing', async () => {
+        productModel.findOne.mockResolvedValue(null);
         const reqMissingName = { ...req, fields: { ...req.fields, name: '' } };
         await updateProductController(reqMissingName, res);
 
@@ -1105,6 +1132,7 @@ describe('updateProductController', () => {
     });
 
     it('should return an error if description is missing', async () => {
+        productModel.findOne.mockResolvedValue(null);
         const reqMissingDescription = {
             ...req,
             fields: { ...req.fields, description: '' },
@@ -1118,6 +1146,7 @@ describe('updateProductController', () => {
     });
 
     it('should return an error if price is missing', async () => {
+        productModel.findOne.mockResolvedValue(null);
         const reqMissingPrice = {
             ...req,
             fields: { ...req.fields, price: undefined },
@@ -1131,6 +1160,7 @@ describe('updateProductController', () => {
     });
 
     it('should return an error if category is missing', async () => {
+        productModel.findOne.mockResolvedValue(null);
         const reqMissingCategory = {
             ...req,
             fields: { ...req.fields, category: '' },
@@ -1144,6 +1174,7 @@ describe('updateProductController', () => {
     });
 
     it('should return an error if quantity is missing', async () => {
+        productModel.findOne.mockResolvedValue(null);
         const reqMissingQuantity = {
             ...req,
             fields: { ...req.fields, quantity: undefined },
@@ -1157,6 +1188,7 @@ describe('updateProductController', () => {
     });
 
     it('should return an error if shipping is missing', async () => {
+        productModel.findOne.mockResolvedValue(null);
         const reqMissingShipping = {
             ...req,
             fields: { ...req.fields, shipping: undefined },
@@ -1170,6 +1202,7 @@ describe('updateProductController', () => {
     });
 
     it('should return an error if photo is more than 1MB', async () => {
+        productModel.findOne.mockResolvedValue(null);
         const reqMissingPhoto = {
             ...req,
             files: { photo: { ...req.files.photo, size: 2000000 } },
@@ -1183,6 +1216,7 @@ describe('updateProductController', () => {
     });
 
     it('should update product if all fields provided', async () => {
+        productModel.findOne.mockResolvedValue(null);
         const product = {
             _id: '1',
             name: 'a',
@@ -1215,6 +1249,7 @@ describe('updateProductController', () => {
     });
 
     it('should update product if photo not provided', async () => {
+        productModel.findOne.mockResolvedValue(null);
         const product = {
             _id: '1',
             name: 'a',
@@ -1246,6 +1281,7 @@ describe('updateProductController', () => {
     });
 
     it('should handle errors properly', async () => {
+        productModel.findOne.mockResolvedValue(null);
         productModel.findByIdAndUpdate.mockRejectedValueOnce(
             new Error('DB fail')
         );
@@ -1262,6 +1298,92 @@ describe('updateProductController', () => {
             success: false,
             message: 'Error while updating product',
             error: 'DB fail',
+        });
+    });
+
+    it('should return 409 if duplicate product found and is not the same product', async () => {
+        // oh no! duplicate product is found
+        productModel.findOne.mockResolvedValue({
+            _id: '0',
+        });
+
+        await updateProductController(req, res);
+
+        expect(res.status).toHaveBeenCalledWith(409);
+        expect(res.json).toHaveBeenCalledWith({
+            success: false,
+            message: 'A product with this name already exists',
+        });
+    });
+
+    it('should update successfully if product name is the same', async () => {
+        const req2 = {
+            params: { pid: '0' },
+            fields: {
+                name: 'A',
+                description: 'b',
+                price: 10,
+                category: 'cat1',
+                quantity: 1,
+                shipping: true,
+            },
+            files: {},
+        };
+
+        const product = {
+            _id: '0',
+            name: 'A',
+            description: 'b',
+            price: 10,
+            category: 'cat1',
+            quantity: 1,
+            shipping: true,
+        };
+
+        // product to update already exists in the database
+        productModel.findOne.mockResolvedValue(product);
+
+        productModel.findByIdAndUpdate.mockResolvedValueOnce({
+            ...product,
+            photo: {},
+            save: jest.fn().mockResolvedValueOnce(product),
+        });
+
+        await updateProductController(req2, res);
+
+        expect(res.status).toHaveBeenCalledWith(200);
+        expect(res.json).toHaveBeenCalledWith({
+            success: true,
+            message: 'Product updated successfully',
+            products: expect.objectContaining({ ...product }),
+        });
+    });
+
+    it('should return 404 if product to update does not exist', async () => {
+        const req2 = {
+            params: { pid: '0' },
+            fields: {
+                name: 'A',
+                description: 'b',
+                price: 10,
+                category: 'cat1',
+                quantity: 1,
+                shipping: true,
+            },
+            files: {},
+        };
+
+        productModel.findOne.mockResolvedValue(null);
+
+        // product to update already does not exist
+        productModel.findByIdAndUpdate.mockResolvedValueOnce(null);
+
+        await updateProductController(req2, res);
+
+        expect(res.status).toHaveBeenCalledWith(404);
+        expect(res.json).toHaveBeenCalledWith({
+            success: false,
+            message: 'Product not found',
         });
     });
 });

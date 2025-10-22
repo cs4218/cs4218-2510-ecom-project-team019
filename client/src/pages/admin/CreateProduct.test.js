@@ -371,4 +371,89 @@ describe('CreateProduct component', () => {
         );
         expect(mockNavigate).not.toHaveBeenCalled();
     });
+
+    it('shows useful error toast if form submission error has useful message', async () => {
+        axios.get.mockResolvedValueOnce({
+            data: {
+                success: true,
+                category: [{ name: 'Cat1', slug: 'cat1', _id: 'cat123' }],
+            },
+        });
+
+        const error = {
+            response: {
+                status: 409,
+                data: {
+                    success: false,
+                    message: 'A product with this name already exists',
+                },
+            },
+        };
+        axios.post.mockRejectedValueOnce(error);
+
+        // Spy on console.log to verify error logging
+        const consoleSpy = jest
+            .spyOn(console, 'log')
+            .mockImplementation(() => {});
+
+        render(
+            <MemoryRouter>
+                <CreateProduct />
+            </MemoryRouter>
+        );
+
+        fireEvent.change(screen.getByPlaceholderText(/Enter name/i), {
+            target: { value: 'Test Product' },
+        });
+        fireEvent.change(screen.getByPlaceholderText(/Enter description/i), {
+            target: { value: 'Test Desc' },
+        });
+        fireEvent.change(screen.getByPlaceholderText(/Enter price/i), {
+            target: { value: '100' },
+        });
+        fireEvent.change(screen.getByPlaceholderText(/Enter quantity/i), {
+            target: { value: '5' },
+        });
+
+        await waitFor(() =>
+            expect(screen.getByText('Cat1')).toBeInTheDocument()
+        );
+
+        // simulate selecting category + shipping
+        // Open "Select a category"
+        fireEvent.change(screen.getByTestId('Select a category'), {
+            target: { value: 'cat123' },
+        });
+
+        // Open "Select Shipping"
+        fireEvent.change(screen.getByTestId('Select shipping'), {
+            target: { value: '1' },
+        });
+
+        // ensure select values are updated
+        await waitFor(() => {
+            expect(screen.getByTestId('Select a category').value).toBe(
+                'cat123'
+            );
+            expect(screen.getByTestId('Select shipping').value).toBe('1');
+        });
+
+        await act(async () => {
+            // click submit
+            fireEvent.click(
+                screen.getByRole('button', { name: /create product/i })
+            );
+        });
+
+        expect(axios.post).toHaveBeenCalledWith(
+            '/api/v1/product/create-product',
+            expect.any(FormData)
+        );
+
+        // verify error toast shown
+        expect(toast.error).toHaveBeenCalledWith(
+            'A product with this name already exists'
+        );
+        expect(mockNavigate).not.toHaveBeenCalled();
+    });
 });

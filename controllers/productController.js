@@ -22,6 +22,15 @@ export const createProductController = async (req, res) => {
         const { name, description, price, category, quantity, shipping } =
             req.fields;
         const { photo } = req.files;
+
+        const existingProductName = await productModel.findOne({ name });
+        if (existingProductName) {
+            return res.status(409).json({
+                success: false,
+                message: 'Product already exists',
+            });
+        }
+
         // Validation
         switch (true) {
             case !name:
@@ -167,6 +176,17 @@ export const updateProductController = async (req, res) => {
             req.fields;
         const { photo } = req.files;
 
+        const existingProductName = await productModel.findOne({ name });
+        if (
+            existingProductName &&
+            existingProductName._id.toString() !== req.params.pid
+        ) {
+            return res.status(409).json({
+                success: false,
+                message: 'A product with this name already exists',
+            });
+        }
+
         // Validation
         switch (true) {
             case !name:
@@ -194,6 +214,14 @@ export const updateProductController = async (req, res) => {
             { ...req.fields, slug: slugify(name) },
             { new: true }
         );
+
+        if (!products) {
+            return res.status(404).json({
+                success: false,
+                message: 'Product not found',
+            });
+        }
+
         if (photo) {
             products.photo = products.photo ?? {};
             products.photo.data = fs.readFileSync(photo.path);
