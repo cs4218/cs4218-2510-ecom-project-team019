@@ -183,7 +183,11 @@ export const getOrdersController = async (req, res) => {
       .find({ buyer: req.user._id })
       .populate("products", "-photo")
       .populate("buyer", "name");
-    res.status(200).json(orders);
+    res.status(200).json({
+      success: true,
+      message: "Successfully retrieved orders",
+      orders
+    });
   } catch (error) {
     res.status(500).json({
       success: false,
