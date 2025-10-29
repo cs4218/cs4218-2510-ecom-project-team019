@@ -691,24 +691,24 @@ describe('integration test: getAllOrdersController', () => {
         // Orders is sorted with the most recent order at the beginning of the array
 
         // Extract the orders that were sent to res.json
-        const jsonArg = res.json.mock.calls[0][0];
-        expect(Array.isArray(jsonArg)).toBe(true);
-        expect(jsonArg.length).toBe(2);
+        const orders = res.json.mock.calls[0][0];
+        expect(Array.isArray(orders)).toBe(true);
+        expect(orders.length).toBe(2);
 
         // Assert Order made by testUser2
-        expect(jsonArg[0].buyer.name).toBe('Mary Lamb');
-        expect(jsonArg[0].products.length).toBe(1);
+        expect(orders[0].buyer.name).toBe('Mary Lamb');
+        expect(orders[0].products.length).toBe(1);
 
         // Check Order details from testUser2 product details are populated
-        expect(jsonArg[0].products[0]).toHaveProperty('name', 'Shirt');
+        expect(orders[0].products[0]).toHaveProperty('name', 'Shirt');
 
         // Assert Order made by testUser1
-        expect(jsonArg[1].buyer.name).toBe('John Doe');
-        expect(jsonArg[1].products.length).toBe(2);
+        expect(orders[1].buyer.name).toBe('John Doe');
+        expect(orders[1].products.length).toBe(2);
 
         // Check Order details from testUser1 product details are populated
-        expect(jsonArg[1].products[0]).toHaveProperty('name', 'Book');
-        expect(jsonArg[1].products[1]).toHaveProperty('name', 'Laptop');
+        expect(orders[1].products[0]).toHaveProperty('name', 'Book');
+        expect(orders[1].products[1]).toHaveProperty('name', 'Laptop');
     });
 
     it('should return 200 and empty array if no orders exist', async () => {
@@ -716,9 +716,9 @@ describe('integration test: getAllOrdersController', () => {
         await getAllOrdersController(req, res);
 
         expect(res.status).toHaveBeenCalledWith(200);
-        const jsonArg = res.json.mock.calls[0][0];
-        expect(Array.isArray(jsonArg)).toBe(true);
-        expect(jsonArg.length).toBe(0);
+        const orders = res.json.mock.calls[0][0];
+        expect(Array.isArray(orders)).toBe(true);
+        expect(orders.length).toBe(0);
     });
 
     // for some reason this test fails, when it shouldn't. Commenting it now in case
