@@ -10,6 +10,9 @@ beforeAll(async () => {
         useNewUrlParser: true,
         useUnifiedTopology: true,
     });
+
+    // Wait until indexes are created before tests start. This ensures that unique constraints are applied
+    await Product.init();
 });
 
 beforeEach(async () => {

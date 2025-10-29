@@ -650,7 +650,11 @@ describe('unit test: getOrdersController', () => {
 
         expect(orderModel.find).toHaveBeenCalledWith({ buyer: req.user._id });
         expect(res.status).toHaveBeenCalledWith(200);
-        expect(res.json).toHaveBeenCalledWith(mockOrders);
+        expect(res.json).toHaveBeenCalledWith({
+            success: true,
+            message: expect.any(String),
+            orders: mockOrders
+        });
     });
 
     it('should return 500 if error is thrown while retrieving orders', async () => {
