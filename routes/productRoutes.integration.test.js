@@ -7,6 +7,7 @@ import userModel from '../models/userModel.js';
 import categoryModel from '../models/categoryModel.js';
 import slugify from 'slugify';
 import dotenv from 'dotenv';
+import { gateway } from '../controllers/productController.js';
 
 dotenv.config();
 process.env.JWT_SECRET ||= 'testsecret';
@@ -43,6 +44,8 @@ afterEach(async () => {
     for (const key in collections) {
         await collections[key].deleteMany({});
     }
+
+    jest.clearAllMocks();
 });
 
 afterAll(async () => {
@@ -517,5 +520,95 @@ describe('DELETE /api/v1/product/delete-product/:pid', () => {
             .expect(401);
 
         expect(res2.body.success).toBe(false);
+    });
+});
+
+// BraintreeTokenController
+describe('GET /api/v1/product/braintree/token', () => {
+    it('calls the payment gateway API successfully', async () => {
+        gateway.clientToken.generate = jest.fn((data, callback) => {
+            callback(null, { success: true });
+        });
+
+        const res = await request(app).get('/api/v1/product/braintree/token');
+
+        expect(res.status).toBe(200);
+        expect(res.body).toMatchObject({ ok: true });
+    });
+
+    it('return 500 if there is a network error when hitting the payment gateway endpoint', async () => {
+        const errorMessage = 'network error';
+
+        gateway.clientToken.generate = jest.fn((data, callback) => {
+            callback(errorMessage, { success: false });
+        });
+
+        const res = await request(app).get('/api/v1/product/braintree/token');
+
+        expect(res.status).toBe(500);
+        expect(res.body).toMatchObject({
+            ok: false,
+            error: errorMessage,
+        });
+    });
+});
+
+// BraintreePaymentTokenController
+describe('POST /api/v1/product/braintree/payment', () => {
+    let testUser;
+
+    beforeEach(async () => {
+        testUser = await userModel.create({
+            name: 'Test User',
+            email: 'testuser@gmail.com',
+            password: 'testpassword',
+            phone: '12341234',
+            address: 'CLB',
+            answer: 'something',
+            role: 0, // non-admin user
+        });
+    });
+
+    afterEach(async () => {
+        await userModel.deleteMany({});
+        jest.clearAllMocks();
+    });
+
+    it('payment to braintree gateway is made successfully', async () => {
+        gateway.transaction.sale = jest.fn((data, callback) => {
+            callback(null, { success: true });
+        });
+
+        const body = {
+            nonce: 'nonce',
+            cart: [{ price: 10 }, { price: 20 }],
+        };
+
+        const token = JWT.sign({ _id: testUser._id }, process.env.JWT_SECRET, {
+            expiresIn: '7d',
+        });
+
+        const res = await request(app)
+            .post('/api/v1/product/braintree/payment')
+            .set('Authorization', `${token}`)
+            .send(body);
+
+        expect(res.status).toBe(200);
+        expect(res.body.ok).toBe(true);
+    });
+
+    it(`returns a 401 error if JWT is not defined when making API request`, async () => {
+        const invalidToken = 'invalid token';
+
+        const res = await request(app)
+            .post('/api/v1/product/braintree/payment')
+            .set('Authorization', `${invalidToken}`);
+
+        expect(res.status).toBe(401);
+        expect(res.body).toMatchObject({
+            success: false,
+            message: expect.any(String),
+        });
+        expect(res.body.message).toMatch(/unauthorized/i);
     });
 });
